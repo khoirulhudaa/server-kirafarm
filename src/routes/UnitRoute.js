@@ -5,7 +5,7 @@ const {
   create,
   update,
   softDelete,
-} = require('../controllers/unitController');
+} = require('../controllers/UnitController');
 const AuthMiddleware = require('../middlewares/AuthMiddleware');
 
 const router = express.Router();
