@@ -27,15 +27,39 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
       },
+      shippingAddress: { 
+        type: DataTypes.TEXT, 
+        allowNull: false 
+      }, 
+      shippingCost: { 
+        type: DataTypes.DECIMAL(15, 2), 
+        defaultValue: 0 
+      }, 
       status: {
-        type: DataTypes.ENUM('PAID', 'PENDING', 'CANCELLED'),
-        defaultValue: 'PAID',
+        type: DataTypes.ENUM('RESERVED', 'PENDING_PAYMENT', 'PAID', 'SHIPPED', 'COMPLETED', 'CANCELLED'),
+        defaultValue: 'RESERVED'
+      },
+      customerPhone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      type: {
+        type: DataTypes.ENUM('DIRECT', 'BOOKING'),
+        defaultValue: 'DIRECT'
+      },
+      pickupDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      holdingCost: {
+        type: DataTypes.DECIMAL(15, 2),
+        defaultValue: 0
       },
     }, { timestamps: true });
     
     Sale.associate = (models) => {
       Sale.belongsTo(models.Customer, { foreignKey: 'customerId', as: 'customer' });
-      Sale.hasMany(models.SaleItem, { foreignKey: 'saleId', onDelete: 'CASCADE' });
+      Sale.hasMany(models.SaleItem, { foreignKey: 'saleId', onDelete: 'CASCADE', as: 'items' });
     };
 
     return Sale;

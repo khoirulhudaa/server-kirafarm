@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const dotenv = require('dotenv');
 const errorHandler = require('./src/middlewares/ErroHandle');
 const sequelize = require('./src/config/database');
+require('dotenv').config(); // <--- WAJIB ADA DI BARIS PERTAMA
 
 // Di index.js, setelah app.use(express.urlencoded(...))
 const swaggerUi = require('swagger-ui-express');
@@ -17,6 +18,7 @@ const unitRoutes = require('./src/routes/UnitRoute');
 const saleRoutes = require('./src/routes/SaleRoute');
 const customerRoutes = require('./src/routes/customerRoute');
 const userRoutes = require('./src/routes/UserRoute');
+const xenditRoutes = require('./src/routes/xenditRoute');
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +36,7 @@ app.use(express.urlencoded({ extended: true })); // tambahan untuk form data
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/xendit', xenditRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/user', userRoutes);
@@ -71,7 +74,7 @@ async function startServer() {
     console.log('✅ Koneksi ke database MySQL berhasil!');
 
     // 2. Sync model ke database (otomatis buat tabel jika belum ada)
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true, force: false });
     // alter: true  → otomatis update struktur tabel jika ada perubahan model
     // force: false → tidak hapus data yang sudah ada
     console.log('✅ Sync model ke database selesai (tabel siap digunakan)');

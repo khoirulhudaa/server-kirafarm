@@ -6,7 +6,10 @@ module.exports = (sequelize, DataTypes) => {
     price: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
     stock: { type: DataTypes.INTEGER, defaultValue: 0 },
     description: DataTypes.TEXT,
-    thumbnail: DataTypes.STRING,
+    thumbnail: {
+      type: DataTypes.TEXT, // Menggunakan TEXT agar aman untuk URL Cloudinary yang panjang
+      allowNull: true
+    },
     origin: DataTypes.STRING,
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
     // HAPUS categoryId dan unitId dari sini!

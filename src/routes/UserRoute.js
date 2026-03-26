@@ -1,5 +1,3 @@
-// src/routes/UserRoute.js
-
 const express = require('express');
 const {
   create,
