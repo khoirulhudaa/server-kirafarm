@@ -67,8 +67,8 @@ const XenditController = {
             mobileNumber: customerPhone,
             email: customerEmail,
           },
-          successRedirectUrl: `http://localhost:2388/history`,
-          failureRedirectUrl: `http://localhost:2388/checkout`,
+          successRedirectUrl: `https://kirafarm.kiraproject.id/history`,
+          failureRedirectUrl: `https://kirafarm.kiraproject.id/checkout`,
           currency: 'IDR',
         }
       });
