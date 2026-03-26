@@ -1,6 +1,6 @@
 const { Xendit } = require('xendit-node'); // Perhatikan kurung kurawal { }
 const { Sale, SaleItem, Product } = require('../models');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 // Inisialisasi SDK Xendit (Versi 3.x.x)
 const xenditClient = new Xendit({
@@ -16,7 +16,7 @@ const XenditController = {
         shippingAddress, items, type, pickupDate, holdingCost 
     } = req.body
 
-      const saleId = uuidv4();
+      const saleId = randomUUID();
       let totalAmount = 0;
       const saleItemsData = [];
 
@@ -28,7 +28,7 @@ const XenditController = {
         totalAmount += subtotal;
 
         saleItemsData.push({
-          id: uuidv4(),
+          id: randomUUID(),
           saleId: saleId,
           productId: product.id,
           productName: product.name,

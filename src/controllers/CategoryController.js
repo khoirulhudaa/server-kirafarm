@@ -1,5 +1,5 @@
+const { randomUUID } = require('crypto');
 const { Category } = require('../models');
-const { v4: uuidv4 } = require('uuid');
 
 // GET semua kategori (hanya yang ACTIVE by default)
 const getAll = async (req, res) => {
@@ -63,7 +63,7 @@ const create = async (req, res) => {
     }
 
     const category = await Category.create({
-      id: uuidv4(),
+      id: randomUUID(),
       name,
       description: description || null,
       status: 'ACTIVE',

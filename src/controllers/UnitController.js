@@ -1,5 +1,5 @@
+const { randomUUID } = require('crypto');
 const { Unit } = require('../models');
-const { v4: uuidv4 } = require('uuid');
 
 // GET semua unit (hanya ACTIVE)
 const getAll = async (req, res) => {
@@ -63,7 +63,7 @@ const create = async (req, res) => {
     }
 
     const unit = await Unit.create({
-      id: uuidv4(),
+      id: randomUUID(),
       name,
       fullName,
       description: description || null,

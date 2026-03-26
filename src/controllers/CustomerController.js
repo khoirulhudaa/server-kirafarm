@@ -1,5 +1,5 @@
+const { randomUUID } = require('crypto');
 const { Customer } = require('../models');
-const { v4: uuidv4 } = require('uuid');
 
 // GET semua customer
 const getAll = async (req, res) => {
@@ -61,7 +61,7 @@ const create = async (req, res) => {
     }
 
     const customer = await Customer.create({
-      id: uuidv4(),
+      id: randomUUID(),
       name,
       phone,
       email: email || null,

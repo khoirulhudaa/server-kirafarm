@@ -1,7 +1,5 @@
-// src/controllers/saleController.js
-
+const { randomUUID } = require('crypto');
 const { Sale, SaleItem, Product, Customer } = require('../models');
-const { v4: uuidv4 } = require('uuid');
 
 // GET semua penjualan
 const getAll = async (req, res) => {
@@ -43,79 +41,6 @@ const getById = async (req, res) => {
   }
 };
 
-// CREATE penjualan baru
-// const create = async (req, res) => {
-//   const t = await Sale.sequelize.transaction();
-//   try {
-//     const { customerName, customerId, items } = req.body;
-
-//     if (!customerName || !items || items.length === 0) {
-//       return res.status(400).json({ success: false, message: 'Nama pelanggan dan item wajib diisi' });
-//     }
-
-//     let totalAmount = 0;
-//     const saleItems = [];
-
-//     for (const item of items) {
-//       const product = await Product.findByPk(item.productId, { transaction: t });
-//       if (!product) {
-//         throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
-//       }
-
-//       const subtotal = product.price * item.quantity;
-//       totalAmount += subtotal;
-
-//       saleItems.push({
-//         id: uuidv4(),
-//         productId: product.id,
-//         productName: product.name,
-//         price: product.price,
-//         quantity: item.quantity,
-//         subtotal,
-//       });
-//     }
-
-//     const invoiceNumber = `INV-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(1000 + Math.random() * 9000)).padStart(4, '0')}`;
-
-//     const sale = await Sale.create({
-//       id: uuidv4(),
-//       invoiceNumber,
-//       date: new Date(),
-//       customerId: customerId || null,
-//       customerName,
-//       totalAmount,
-//       status: 'PAID',
-//     }, { transaction: t });
-
-//     await SaleItem.bulkCreate(
-//       saleItems.map(item => ({ ...item, saleId: sale.id })),
-//       { transaction: t }
-//     );
-
-//     await t.commit();
-
-//     const newSale = await Sale.findByPk(sale.id, {
-//       include: [
-//         { model: SaleItem, include: [Product] },
-//         { model: Customer, attributes: ['id', 'name', 'phone'] },
-//       ],
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Penjualan berhasil dicatat',
-//       data: newSale,
-//     });
-//   } catch (err) {
-//     await t.rollback();
-//     console.error('Error creating sale:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: err.message || 'Gagal menyimpan penjualan',
-//     });
-//   }
-// };
-
 const create = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
@@ -125,7 +50,7 @@ const create = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Keranjang kosong' });
     }
 
-    const saleId = uuidv4();
+    const saleId = randomUUID();
     const saleItems = [];
     let totalAmount = 0;
 
@@ -143,7 +68,7 @@ const create = async (req, res) => {
       totalAmount += subtotal;
 
       saleItems.push({
-        id: uuidv4(),
+        id: randomUUID(),
         saleId: saleId,
         productId: product.id,
         // Gunakan data dari database (server-side) bukan dari req.body untuk keamanan harga
@@ -176,87 +101,6 @@ const create = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
-// UPDATE penjualan (hanya jika status masih PAID atau PENDING)
-// const update = async (req, res) => {
-//   const t = await Sale.sequelize.transaction();
-//   try {
-//     const { id } = req.params;
-//     const { customerName, customerId, items } = req.body;
-
-//     const sale = await Sale.findByPk(id, { include: [SaleItem] });
-//     if (!sale) {
-//       return res.status(404).json({ success: false, message: 'Penjualan tidak ditemukan' });
-//     }
-
-//     if (sale.status === 'CANCELLED') {
-//       return res.status(400).json({ success: false, message: 'Penjualan yang dibatalkan tidak bisa diubah' });
-//     }
-
-//     if (!items || items.length === 0) {
-//       return res.status(400).json({ success: false, message: 'Item penjualan wajib diisi' });
-//     }
-
-//     let totalAmount = 0;
-//     const newSaleItems = [];
-
-//     for (const item of items) {
-//       const product = await Product.findByPk(item.productId);
-//       if (!product) {
-//         throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
-//       }
-
-//       const subtotal = product.price * item.quantity;
-//       totalAmount += subtotal;
-
-//       newSaleItems.push({
-//         id: item.id || uuidv4(), // jika item lama, pakai ID lama
-//         saleId: sale.id,
-//         productId: product.id,
-//         productName: product.name,
-//         price: product.price,
-//         quantity: item.quantity,
-//         subtotal,
-//       });
-//     }
-
-//     // Hapus SaleItem lama
-//     await SaleItem.destroy({ where: { saleId: sale.id }, transaction: t });
-
-//     // Buat SaleItem baru
-//     await SaleItem.bulkCreate(newSaleItems, { transaction: t });
-
-//     // Update Sale utama
-//     await sale.update({
-//       customerName: customerName || sale.customerName,
-//       customerId: customerId || sale.customerId,
-//       totalAmount,
-//     }, { transaction: t });
-
-//     await t.commit();
-
-//     const updatedSale = await Sale.findByPk(id, {
-//       include: [
-//         { model: SaleItem, include: [Product] },
-//         { model: Customer, attributes: ['id', 'name', 'phone'] },
-//       ],
-//     });
-
-//     res.json({
-//       success: true,
-//       message: 'Penjualan berhasil diperbarui',
-//       data: updatedSale,
-//     });
-//   } catch (err) {
-//     await t.rollback();
-//     console.error('Error updating sale:', err);
-//     res.status(500).json({
-//       success: false,
-//       message: err.message || 'Gagal memperbarui penjualan',
-//     });
-//   }
-// };
-
 
 const update = async (req, res) => {
   const t = await Sale.sequelize.transaction();
@@ -304,7 +148,7 @@ const update = async (req, res) => {
         newTotal += subtotal;
 
         newSaleItems.push({
-          id: uuidv4(),
+          id: randomUUID(),
           saleId: sale.id,
           productId: product.id,
           productName: product.name,

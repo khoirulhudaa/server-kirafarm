@@ -1,8 +1,6 @@
-// src/controllers/userController.js
-
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 const SALT_ROUNDS = 10;
 
@@ -30,7 +28,7 @@ const create = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await User.create({
-      id: uuidv4(),
+      id: randomUUID(),
       name,
       email,
       phone: phone || null,
