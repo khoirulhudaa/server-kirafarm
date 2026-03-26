@@ -16,7 +16,7 @@ const productRoutes = require('./src/routes/ProductRoute');
 const categoryRoutes = require('./src/routes/CategoryRoute');
 const unitRoutes = require('./src/routes/UnitRoute');
 const saleRoutes = require('./src/routes/SaleRoute');
-const customerRoutes = require('./src/routes/customerRoute');
+const customerRoutes = require('./src/routes/CustomerRoute');
 const userRoutes = require('./src/routes/UserRoute');
 const xenditRoutes = require('./src/routes/xenditRoute');
 
