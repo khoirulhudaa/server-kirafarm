@@ -6,16 +6,19 @@ const getAll = async (req, res) => {
   try {
     const sales = await Sale.findAll({
       include: [
-        { model: SaleItem, include: [Product] },
-        // { model: Customer, attributes: ['id', 'name', 'phone'] },
+        { 
+          model: SaleItem, 
+          as: 'items', // Harus sama dengan as di model Sale.associate
+          include: [{ model: Product }] 
+        },
       ],
-      order: [['date', 'DESC']],
+      order: [['createdAt', 'DESC']], // Gunakan createdAt jika kolom 'date' bermasalah
     });
 
     res.json({ success: true, data: sales });
   } catch (err) {
-    console.error('Error fetching sales:', err);
-    res.status(500).json({ success: false, message: 'Gagal mengambil data penjualan' });
+    console.error('Error fetching sales:', err); // Lihat detail error di terminal aaPanel!
+    res.status(500).json({ success: false, message: err.message }); // Ubah ke err.message untuk debug
   }
 };
 
@@ -44,7 +47,8 @@ const getById = async (req, res) => {
 const create = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
-    const { customerName, customerId, items, shippingAddress } = req.body;
+
+    const { customerName, customerId, items, shippingAddress, customerPhone, type, pickupDate, holdingCost } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Keranjang kosong' });
@@ -84,11 +88,15 @@ const create = async (req, res) => {
       id: saleId,
       invoiceNumber: `INV-${Date.now()}`,
       customerName,
+      customerPhone: customerPhone || '000000', // Pastikan ini terisi
       customerId: customerId || null,
       shippingAddress,
       totalAmount,
       shippingCost: 0,
       status: 'RESERVED',
+      type: type || 'DIRECT', // Tambahkan ini
+      pickupDate: pickupDate || null, // Tambahkan ini
+      holdingCost: holdingCost || 0 // Tambahkan ini
     }, { transaction: t });
 
     await SaleItem.bulkCreate(saleItems, { transaction: t });

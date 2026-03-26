@@ -41,6 +41,7 @@ module.exports = (sequelize, DataTypes) => {
     Product.hasMany(models.SaleItem, {
       foreignKey: 'productId',
       onDelete: 'CASCADE',
+      as: 'saleItems' 
     });
   };
 
