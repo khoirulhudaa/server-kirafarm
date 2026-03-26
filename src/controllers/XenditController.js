@@ -90,13 +90,30 @@ const XenditController = {
 
   handleWebhook: async (req, res) => {
     const { external_id, status } = req.body;
-
+    const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
+    
     try {
       if (status === 'PAID' || status === 'SETTLED') {
         await Sale.update(
           { status: 'PAID' },
           { where: { id: external_id } }
         );
+
+        // 3. Kurangi stok setiap produk
+        for (const item of currentSale.items) {
+          const product = await Product.findByPk(item.productId, { transaction: t });
+          
+          if (product) {
+            const newStock = product.stock - item.quantity;
+            
+            if (newStock < 0) {
+              // Opsional: Berikan peringatan jika stok sampai minus
+              console.warn(`⚠️ Stok produk ${product.name} menjadi negatif!`);
+            }
+
+            await product.update({ stock: newStock }, { transaction: t });
+          }
+        }
         console.log(`✅ Order ${external_id} Berhasil Dibayar`);
       }
       res.status(200).send('Webhook Received');
