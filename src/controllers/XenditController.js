@@ -106,7 +106,7 @@ const XenditController = {
     }
   },
 
-  getOrderHistory: async (req, res) => {
+ getOrderHistory: async (req, res) => {
     const { phone } = req.params;
 
     try {
@@ -114,7 +114,12 @@ const XenditController = {
         where: { customerPhone: phone },
         include: [{
           model: SaleItem,
-          as: 'SaleItems' // Secara default Sequelize pakai NamaModel+'s' jika tidak di-alias
+          as: 'items',
+          include: [{
+            model: Product,
+            // Ambil data penting saja
+            attributes: ['name', 'thumbnail', 'price', 'code', 'origin'] 
+          }]
         }],
         order: [['createdAt', 'DESC']]
       });
