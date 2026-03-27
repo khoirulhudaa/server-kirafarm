@@ -1,12 +1,11 @@
-// models/ChatMessage.js
 module.exports = (sequelize, DataTypes) => {
   const ChatMessage = sequelize.define('ChatMessage', {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(36), // Disarankan tentukan panjangnya
       primaryKey: true,
     },
     orderId: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(36), // Harus sama persis dengan Sales.id
       allowNull: false,
     },
     sender: {
@@ -21,12 +20,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     }
-  }, { timestamps: true });
+  }, { 
+    timestamps: true,
+    // TAMBAHKAN INI agar database tidak protes soal kompatibilitas
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci' 
+  });
 
   ChatMessage.associate = (models) => {
     ChatMessage.belongsTo(models.Sale, {
       foreignKey: 'orderId',
-      as: 'order'
+      as: 'order',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
     });
   };
 

@@ -179,9 +179,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
     },
-
   }, {
-    timestamps: true, // createdAt & updatedAt aktif
+    timestamps: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci'
   });
 
   Sale.associate = (models) => {
