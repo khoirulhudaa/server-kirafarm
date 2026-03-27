@@ -18,6 +18,8 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     timestamps: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci',
     tableName: 'Categories',
   });
 

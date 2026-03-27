@@ -22,9 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, { 
     timestamps: true,
-    // TAMBAHKAN INI agar database tidak protes soal kompatibilitas
     charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci' 
+    collate: 'utf8mb4_unicode_ci'
   });
 
   ChatMessage.associate = (models) => {

@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Product = sequelize.define('Product', {
-    id: { type: DataTypes.STRING, primaryKey: true, allowNull: false },
+    id: { type: DataTypes.STRING(36), primaryKey: true, allowNull: false },
     code: { type: DataTypes.STRING, unique: true, allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
     price: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
@@ -14,7 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
     // HAPUS categoryId dan unitId dari sini!
   }, { 
-    timestamps: true, 
+    timestamps: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci',
     indexes: [
       // Index single column
       { fields: ['categoryId'] },

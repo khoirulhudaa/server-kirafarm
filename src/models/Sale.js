@@ -68,12 +68,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const Sale = sequelize.define('Sale', {
-    id: {
-      type: DataTypes.STRING,
-      primaryKey: true,
-      allowNull: false,
-    },
-
+    id: { type: DataTypes.STRING(36), primaryKey: true, allowNull: false },
     invoiceNumber: {
       type: DataTypes.STRING,
       unique: true,

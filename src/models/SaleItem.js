@@ -1,10 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const SaleItem = sequelize.define('SaleItem', {
-    id: {
-      type: DataTypes.STRING,
-      primaryKey: true,
-      allowNull: false,
-    },
+    id: { type: DataTypes.STRING(36), primaryKey: true, allowNull: false },
     saleId: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,7 +25,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
     },
-  }, { timestamps: true });
+  }, { 
+    timestamps: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci' });
   
   SaleItem.associate = (models) => {
     SaleItem.belongsTo(models.Sale, { foreignKey: 'saleId' });
