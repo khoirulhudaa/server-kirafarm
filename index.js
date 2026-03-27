@@ -1,10 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const http = require('http');
 const dotenv = require('dotenv');
 const errorHandler = require('./src/middlewares/ErroHandle');
 const sequelize = require('./src/config/database');
 require('dotenv').config(); // <--- WAJIB ADA DI BARIS PERTAMA
+const { initSocket } = require('./socket');
 
 // Di index.js, setelah app.use(express.urlencoded(...))
 const swaggerUi = require('swagger-ui-express');
@@ -25,6 +27,11 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const server = http.createServer(app);
+const io = initSocket(server); // ⬅️ tangkap return
+
+app.set('io', io); // ⬅️ penting!
 
 // Middleware
 app.use(cors());
@@ -80,7 +87,7 @@ async function startServer() {
     console.log('✅ Sync model ke database selesai (tabel siap digunakan)');
 
     // 3. Jalankan server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 AgroMart Backend berhasil berjalan!`);
       console.log(`📍 Server listening on http://localhost:${PORT}`);
       console.log(`🕒 Tanggal: ${new Date().toLocaleString('id-ID')}`);
