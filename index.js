@@ -81,7 +81,7 @@ async function startServer() {
     console.log('✅ Koneksi ke database MySQL berhasil!');
 
     // 2. Sync model ke database (otomatis buat tabel jika belum ada)
-    await sequelize.sync({ alter: false, force: true });
+    await sequelize.sync({ alter: false, force: false });
     // alter: true  → otomatis update struktur tabel jika ada perubahan model
     // force: false → tidak hapus data yang sudah ada
     console.log('✅ Sync model ke database selesai (tabel siap digunakan)');
