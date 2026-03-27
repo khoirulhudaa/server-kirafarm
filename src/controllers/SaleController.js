@@ -93,7 +93,7 @@ const create = async (req, res) => {
       shippingAddress,
       totalAmount,
       shippingCost: 0,
-      status: 'RESERVED',
+      status: 'PENDING',
       type: type || 'DIRECT', // Tambahkan ini
       pickupDate: pickupDate || null, // Tambahkan ini
       holdingCost: holdingCost || 0 // Tambahkan ini

@@ -5,5 +5,6 @@ const XenditController = require('../controllers/XenditController');
 router.post('/checkout-xendit', XenditController.createOrder);
 router.post('/xendit-webhook', XenditController.handleWebhook);
 router.get('/history/:phone', XenditController.getOrderHistory); 
+router.post('/pay', XenditController.payOrder);
 
 module.exports = router;

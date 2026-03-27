@@ -88,6 +88,45 @@ const XenditController = {
     }
   },
 
+  // BAYAR BERDASARKAN ORDER ID
+  payOrder: async (req, res) => {
+    try {
+      const { orderId } = req.body;
+
+      const sale = await Sale.findByPk(orderId);
+
+      if (!sale) {
+        return res.status(404).json({ success: false, message: 'Order tidak ditemukan' });
+      }
+
+      const xenditInvoice = await xenditClient.Invoice.createInvoice({
+        data: {
+          externalId: sale.id,
+          amount: sale.totalAmount,
+          description: `Pembayaran ${sale.invoiceNumber}`,
+          customer: {
+            givenNames: sale.customerName,
+            mobileNumber: sale.customerPhone,
+          },
+          successRedirectUrl: `https://kirafarm.kiraproject.id/history`,
+          failureRedirectUrl: `https://kirafarm.kiraproject.id/history`,
+          currency: 'IDR',
+        }
+      });
+
+      await sale.update({ status: 'WAITING_PAYMENT' });
+
+      res.json({
+        success: true,
+        paymentUrl: xenditInvoice.invoiceUrl
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
+
   handleWebhook: async (req, res) => {
     const { external_id, status } = req.body;
     const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
