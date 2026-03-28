@@ -15,6 +15,67 @@ const streamUpload = (fileBuffer, folderName) => {
   });
 };
 
+// 1. Ambil semua data seller (untuk Admin)
+const getAllSellers = async (req, res) => {
+  try {
+    // Kita ambil data seller beserta info dasar User-nya
+    const sellers = await Seller.findAll({
+      order: [['createdAt', 'DESC']],
+      include: [{
+        model: User,
+        as: 'user', // Sesuaikan dengan alias di relasi model Anda
+        attributes: ['id', 'username', 'email']
+      }]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: sellers
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Gagal mengambil data seller' });
+  }
+};
+
+// 2. Update Status (Approve / Reject)
+const updateSellerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // 'APPROVED' atau 'REJECTED'
+
+    if (!['APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status tidak valid' });
+    }
+
+    const seller = await Seller.findByPk(id);
+    if (!seller) {
+      return res.status(404).json({ success: false, message: 'Seller tidak ditemukan' });
+    }
+
+    // Jika status diubah menjadi APPROVED, update role USER-nya
+    if (status === 'APPROVED') {
+      await User.update(
+        { role: 'SELLER' }, // Ubah role user menjadi SELLER agar bisa akses dashboard seller
+        { where: { id: seller.userId } }
+      );
+    }
+
+    // Update status di tabel Seller
+    seller.status = status;
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Seller berhasil ${status === 'APPROVED' ? 'disetujui' : 'ditolak'}`,
+      data: seller
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Gagal update status seller' });
+  }
+};
+
 const registerSeller = async (req, res) => {
   try {
     const { 
@@ -95,4 +156,4 @@ const registerSeller = async (req, res) => {
   }
 };
 
-module.exports = { registerSeller };
+module.exports = { getAllSellers, updateSellerStatus, registerSeller };
