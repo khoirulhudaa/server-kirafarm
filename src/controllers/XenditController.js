@@ -127,38 +127,112 @@ const XenditController = {
     }
   },
 
+  // handleWebhook: async (req, res) => {
+  //   const { external_id, status } = req.body;
+  //   const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
+    
+  //   try {
+  //     if (status === 'PAID' || status === 'SETTLED') {
+  //       await Sale.update(
+  //         { status: 'PAID' },
+  //         { where: { id: external_id } }
+  //       );
+
+  //       // 3. Kurangi stok setiap produk
+  //       for (const item of currentSale.items) {
+  //         const product = await Product.findByPk(item.productId, { transaction: t });
+          
+  //         if (product) {
+  //           const newStock = product.stock - item.quantity;
+            
+  //           if (newStock < 0) {
+  //             // Opsional: Berikan peringatan jika stok sampai minus
+  //             console.warn(`⚠️ Stok produk ${product.name} menjadi negatif!`);
+  //           }
+
+  //           await product.update({ stock: newStock }, { transaction: t });
+  //         }
+  //       }
+  //       console.log(`✅ Order ${external_id} Berhasil Dibayar`);
+  //     }
+  //     res.status(200).send('Webhook Received');
+  //   } catch (error) {
+  //     console.error("Webhook Error:", error);
+  //     res.status(500).send('Webhook Error');
+  //   }
+  // },
+
   handleWebhook: async (req, res) => {
     const { external_id, status } = req.body;
-    const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
+    const t = await Sale.sequelize.transaction();
     
     try {
       if (status === 'PAID' || status === 'SETTLED') {
-        await Sale.update(
-          { status: 'PAID' },
-          { where: { id: external_id } }
-        );
+        // Cari data sale beserta itemnya dulu
+        const currentSale = await Sale.findByPk(external_id, { 
+          include: [{ model: SaleItem, as: 'items' }],
+          transaction: t 
+        });
 
-        // 3. Kurangi stok setiap produk
-        for (const item of currentSale.items) {
-          const product = await Product.findByPk(item.productId, { transaction: t });
-          
-          if (product) {
-            const newStock = product.stock - item.quantity;
-            
-            if (newStock < 0) {
-              // Opsional: Berikan peringatan jika stok sampai minus
-              console.warn(`⚠️ Stok produk ${product.name} menjadi negatif!`);
+        if (currentSale && currentSale.status !== 'PROCESSING') {
+          await currentSale.update({ 
+            status: 'PROCESSING', 
+            paidAt: new Date() 
+          }, { transaction: t });
+
+          // Kurangi stok
+          for (const item of currentSale.items) {
+            const product = await Product.findByPk(item.productId, { transaction: t });
+            if (product) {
+              await product.update({ 
+                stock: product.stock - item.quantity 
+              }, { transaction: t });
             }
-
-            await product.update({ stock: newStock }, { transaction: t });
           }
         }
-        console.log(`✅ Order ${external_id} Berhasil Dibayar`);
+        await t.commit();
+        console.log(`✅ Order ${external_id} Berhasil Dibayar & Stok Terpotong`);
       }
       res.status(200).send('Webhook Received');
     } catch (error) {
+      if (t) await t.rollback();
       console.error("Webhook Error:", error);
       res.status(500).send('Webhook Error');
+    }
+  },
+
+  getOrderById: async (req, res) => {
+    try {
+      const { orderId } = req.params;
+
+      const order = await Sale.findByPk(orderId, {
+        include: [{
+          model: SaleItem,
+          as: 'items',
+          include: [{
+            model: Product,
+            attributes: ['name', 'thumbnail', 'price']
+          }]
+        }]
+      });
+
+      if (!order) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Pesanan tidak ditemukan' 
+        });
+      }
+
+      res.json({
+        success: true,
+        data: order
+      });
+    } catch (error) {
+      console.error("Get Order Detail Error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Gagal mengambil detail pesanan." 
+      });
     }
   },
 
