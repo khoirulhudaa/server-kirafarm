@@ -70,6 +70,8 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
+    console.log('USERDATA', userData)
+
     // 4. Tentukan Role & Payload JWT
     // Jika dari tabel Seller, role otomatis OWNER/SELLER
     const role = userType === 'SELLER' ? 'OWNER' : userData.role;

@@ -25,7 +25,7 @@ const registerSeller = async (req, res) => {
 
     // Ambil ID dari user yang sedang login (harus sudah BUYER)
     const userId = req.user.id; 
-
+    
     // 1. Cek apakah user ini sudah pernah mendaftar seller (biar tidak double)
     const alreadySeller = await Seller.findOne({ where: { userId } });
     if (alreadySeller) {
