@@ -73,39 +73,33 @@ const getAll = async (req, res) => {
 
 const getMyProducts = async (req, res) => {
   try {
-    // Mengambil dari URL (?sellerId=...)
     const { sellerId } = req.query;
 
-    console.log("DEBUG target sellerId from Query:", sellerId);
-
     if (!sellerId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Query parameter sellerId wajib dikirim' 
-      });
+      return res.status(400).json({ success: false, message: 'sellerId wajib dikirim' });
     }
 
+    // Gunakan trim untuk menghapus spasi yang mungkin terbawa dari URL
+    const cleanSellerId = sellerId.trim();
+
     const products = await Product.findAll({
-      where: { sellerId: sellerId }, 
-      // include: [
-      //   { model: Category, attributes: ['name'], required: false },
-      //   { model: Unit, attributes: ['name'], required: false },
-      // ],
-      // order: [['createdAt', 'DESC']],
+      where: { 
+        sellerId: cleanSellerId 
+      }, 
+      include: [
+        { model: Category, attributes: ['name'], required: false },
+        { model: Unit, attributes: ['name'], required: false },
+      ],
+      order: [['createdAt', 'DESC']],
     });
 
     res.json({ 
       success: true, 
-      count: products.length,
+      count: products.length, 
       data: products 
     });
   } catch (err) {
-    console.error("ERROR getMyProducts:", err.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Gagal mengambil data produk',
-      error: err.message 
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
