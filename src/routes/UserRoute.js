@@ -7,6 +7,7 @@ const {
   getAll,
   getById,
   getUserProfile,
+  updateProfileFull,
 } = require('../controllers/UserController');
 const AuthMiddleware = require('../middlewares/AuthMiddleware');
 
@@ -16,6 +17,7 @@ const router = express.Router();
 router.get('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getAll);
 router.get('/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getById);
 router.get('/get-profile/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getUserProfile);
+router.put('/update-profile-full/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), updateProfileFull);
 
 // Hanya OWNER & ADMIN yang bisa buat user baru
 router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), create);

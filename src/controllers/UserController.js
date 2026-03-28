@@ -100,6 +100,82 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// UPDATE Profile Lengkap (User + Seller)
+const updateProfileFull = async (req, res) => {
+  const t = await User.sequelize.transaction(); // Inisialisasi Transaksi
+  try {
+    const { id } = req.params;
+    const { 
+      name, 
+      phone, 
+      namaToko, 
+      whatsapp, 
+      alamat, 
+      deskripsi, 
+      bank, 
+      rekening, 
+      namaRekening 
+    } = req.body;
+
+    // 1. Cari User
+    const user = await User.findByPk(id, { transaction: t });
+    if (!user) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+    }
+
+    // 2. Update Tabel User
+    await user.update({
+      name: name || user.name,
+      phone: phone !== undefined ? phone : user.phone,
+    }, { transaction: t });
+
+    // 3. Jika Role adalah SELLER, Update Tabel Seller
+    if (user.role === 'SELLER') {
+      const seller = await Seller.findOne({ where: { userId: id }, transaction: t });
+      
+      if (seller) {
+        await seller.update({
+          namaToko: namaToko || seller.namaToko,
+          whatsapp: whatsapp || seller.whatsapp,
+          alamat: alamat || seller.alamat,
+          deskripsi: deskripsi || seller.deskripsi,
+          bank: bank || seller.bank,
+          rekening: rekening || seller.rekening,
+          namaRekening: namaRekening || seller.namaRekening,
+          // Generate slug otomatis jika nama toko berubah
+          slug: namaToko ? namaToko.toLowerCase().replace(/[^a-z0-9]/g, '-') : seller.slug
+        }, { transaction: t });
+      }
+    }
+
+    // Commit transaksi jika semua berhasil
+    await t.commit();
+
+    // 4. Ambil data terbaru untuk dikirim balik ke frontend
+    const updatedData = await User.findByPk(id, {
+      attributes: { exclude: ['password'] },
+      include: user.role === 'SELLER' ? [{ model: Seller, as: 'seller' }] : []
+    });
+
+    res.json({
+      success: true,
+      message: 'Profil dan data bisnis berhasil diperbarui',
+      data: updatedData,
+    });
+
+  } catch (err) {
+    // Rollback jika ada error di tengah jalan
+    await t.rollback();
+    console.error('Error updating full profile:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal memperbarui profil lengkap',
+      error: err.message
+    });
+  }
+};
+
 // UPDATE password
 const updatePassword = async (req, res) => {
   try {
@@ -265,5 +341,6 @@ module.exports = {
   softDelete,
   getAll,
   getById,
-  getUserProfile
+  getUserProfile,
+  updateProfileFull
 };
