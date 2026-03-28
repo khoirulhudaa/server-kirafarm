@@ -21,6 +21,7 @@ const saleRoutes = require('./src/routes/SaleRoute');
 const customerRoutes = require('./src/routes/CustomerRoute');
 const userRoutes = require('./src/routes/UserRoute');
 const xenditRoutes = require('./src/routes/xenditRoute');
+const chatRoutes = require('./src/routes/chatRoute');
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +43,7 @@ app.use(express.urlencoded({ extended: true })); // tambahan untuk form data
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/xendit', xenditRoutes);
 app.use('/api/units', unitRoutes);
