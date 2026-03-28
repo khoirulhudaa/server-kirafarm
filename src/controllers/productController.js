@@ -75,23 +75,28 @@ const getMyProducts = async (req, res) => {
   try {
     const { sellerId } = req.query;
 
+    // 1. Log untuk memastikan ID yang masuk ke backend bersih
+    console.log("--- QUERY DEBUG ---");
+    console.log("Raw SellerID dari Query:", sellerId);
+    
     if (!sellerId) {
       return res.status(400).json({ success: false, message: 'sellerId wajib dikirim' });
     }
 
-    // Gunakan trim untuk menghapus spasi yang mungkin terbawa dari URL
-    const cleanSellerId = sellerId.trim();
-
     const products = await Product.findAll({
       where: { 
-        sellerId: cleanSellerId 
+        // Gunakan trim() untuk membuang spasi tak kasat mata
+        sellerId: sellerId.trim() 
       }, 
       include: [
         { model: Category, attributes: ['name'], required: false },
         { model: Unit, attributes: ['name'], required: false },
       ],
       order: [['createdAt', 'DESC']],
+      logging: console.log, // <--- LIHAT QUERY SQL DI TERMINAL
     });
+
+    console.log("Jumlah produk ditemukan:", products.length);
 
     res.json({ 
       success: true, 
@@ -99,6 +104,7 @@ const getMyProducts = async (req, res) => {
       data: products 
     });
   } catch (err) {
+    console.error("ERROR getMyProducts:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 };
