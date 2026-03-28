@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     email: { type: DataTypes.STRING, unique: true, allowNull: false },
     phone: { type: DataTypes.STRING },
     password: { type: DataTypes.STRING, allowNull: false },
-    role: { type: DataTypes.ENUM('OWNER', 'ADMIN', 'STAFF', 'WAREHOUSE'), defaultValue: 'STAFF' },
+    role: { type: DataTypes.ENUM('OWNER', 'ADMIN', 'STAFF', 'BUYER', 'SELLER', 'WAREHOUSE'), defaultValue: 'STAFF' },
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
   }, { 
     timestamps: true,
