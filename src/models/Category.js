@@ -9,7 +9,6 @@ module.exports = (sequelize, DataTypes) => {
     name: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
     description: DataTypes.TEXT,
     status: {
@@ -25,6 +24,12 @@ module.exports = (sequelize, DataTypes) => {
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
     tableName: 'Categories',
+    indexes: [
+      {
+        unique: true,
+        fields: ['name', 'sellerId']
+      }
+    ]
   });
 
   Category.associate = (models) => {

@@ -64,8 +64,9 @@ const getById = async (req, res) => {
 // CREATE kategori baru
 const create = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, sellerId } = req.body;
 
+    // 1. Validasi Input Dasar
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -73,10 +74,27 @@ const create = async (req, res) => {
       });
     }
 
+    // 2. Pengecekan Manual (Cek apakah seller ini sudah punya kategori dengan nama yang sama)
+    const existingCategory = await Category.findOne({
+      where: {
+        name: name,
+        sellerId: sellerId || null // Menangani jika sellerId null (kategori global)
+      }
+    });
+
+    if (existingCategory) {
+      return res.status(400).json({
+        success: false,
+        message: `Kategori "${name}" sudah ada di daftar Anda.`,
+      });
+    }
+
+    // 3. Eksekusi Create
     const category = await Category.create({
       id: randomUUID(),
       name,
       description: description || null,
+      sellerId: sellerId || null,
       status: 'ACTIVE',
     });
 
@@ -87,17 +105,10 @@ const create = async (req, res) => {
     });
   } catch (err) {
     console.error('Error creating category:', err);
-
-    if (err.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Nama kategori sudah digunakan',
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: 'Gagal menambahkan kategori',
+      error: err.message
     });
   }
 };

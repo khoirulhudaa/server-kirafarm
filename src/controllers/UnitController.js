@@ -65,20 +65,37 @@
   // CREATE unit baru
   const create = async (req, res) => {
     try {
-      const { name, fullName, description } = req.body;
+      // Ambil sellerId dari body (atau dari req.user.sellerId jika pakai middleware auth)
+      const { name, fullName, description, sellerId } = req.body;
 
-      if (!name || !fullName) {
+      if (!name || !fullName || !sellerId) {
         return res.status(400).json({
           success: false,
-          message: 'Name dan fullName wajib diisi',
+          message: 'Name, fullName, dan sellerId wajib diisi',
         });
       }
 
+      const existingUnit = await Unit.findOne({ 
+        where: { 
+          name, 
+          sellerId 
+        } 
+      });
+
+      if (existingUnit) {
+        return res.status(400).json({
+          success: false,
+          message: 'Anda sudah memiliki satuan dengan singkatan ini'
+        });
+      }
+
+      // Buat data unit dengan menyertakan sellerId
       const unit = await Unit.create({
         id: randomUUID(),
         name,
         fullName,
         description: description || null,
+        sellerId, // Pastikan field ini ada di model Unit
         status: 'ACTIVE',
       });
 
@@ -93,13 +110,13 @@
       if (err.name === 'SequelizeUniqueConstraintError') {
         return res.status(400).json({
           success: false,
-          message: 'Nama singkatan satuan sudah digunakan',
+          message: 'Nama singkatan satuan ini sudah Anda gunakan',
         });
       }
 
       res.status(500).json({
         success: false,
-        message: 'Gagal menambahkan satuan',
+        message: err.message || 'Gagal menambahkan satuan',
       });
     }
   };
