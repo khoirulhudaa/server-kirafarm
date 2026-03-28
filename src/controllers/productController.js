@@ -50,7 +50,8 @@ const getAll = async (req, res) => {
         { 
           model: Seller, 
           attributes: ['id', 'namaToko', 'slug'],
-          required: false 
+          required: false, 
+          as: 'seller',
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -89,10 +90,10 @@ const getMyProducts = async (req, res) => {
 
     const products = await Product.findAll({
       where: { sellerId: sellerId }, // Filter berdasarkan seller
-      include: [
-        { model: Category, attributes: ['name'] },
-        { model: Unit, attributes: ['name'] },
-      ],
+      // include: [
+      //   { model: Category, attributes: ['name'] },
+      //   { model: Unit, attributes: ['name'] },
+      // ],
       order: [['createdAt', 'DESC']],
     });
 
@@ -101,6 +102,7 @@ const getMyProducts = async (req, res) => {
     res.status(500).json({ success: false, message: 'Gagal mengambil data produk seller' });
   }
 };
+
 // GET produk berdasarkan ID
 const getById = async (req, res) => {
   try {
