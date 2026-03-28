@@ -1,8 +1,7 @@
   const bcrypt = require('bcryptjs');
   const jwt = require('jsonwebtoken');
-  const { User } = require('../models');
+  const { User, Seller } = require('../models');
   const { randomUUID } = require('crypto');
-  const seller = require('../models/seller');
 
   const register = async (req, res) => {
     try {
@@ -58,7 +57,7 @@
         userType = 'USER';
       } else {
         // 2. Jika tidak ada di User, cari di tabel Seller
-        userData = await seller.findOne({ where: { email } }); // Asumsi tabel Seller punya field email & password
+        userData = await Seller.findOne({ where: { email } }); // Asumsi tabel Seller punya field email & password
         if (userData) {
           userType = 'SELLER';
           sellerId = userData.id;
