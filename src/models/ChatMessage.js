@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     sender: {
-      type: DataTypes.ENUM('BUYER', 'SELLER'),
+      type: DataTypes.ENUM('BUYER', 'ADMIN', 'SELLER'),
       allowNull: false,
     },
     message: {
