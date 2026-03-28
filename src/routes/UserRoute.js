@@ -25,7 +25,7 @@ router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), create);
 // Update profile (user bisa update dirinya sendiri, atau ADMIN/OWNER update orang lain)
 router.put('/:id/profile', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), updateProfile);
 
-// Update password (user update sendiri atau ADMIN/OWNER)
+// Update password (user update sendiri atau ADMIN/OWNER/SELLER)
 router.patch('/:id/password', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), updatePassword);
 
 // Soft delete / activate (hanya OWNER & ADMIN)

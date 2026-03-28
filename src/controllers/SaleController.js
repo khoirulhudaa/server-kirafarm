@@ -4,21 +4,34 @@ const { Sale, SaleItem, Product, Customer } = require('../models');
 // GET semua penjualan
 const getAll = async (req, res) => {
   try {
+    // Mengambil sellerId dari query params, misal: /sales?sellerId=123
+    const { sellerId } = req.query; 
+    
+    // Buat objek filter kosong
+    const whereCondition = {};
+    
+    // Jika ada sellerId di params, masukkan ke kondisi WHERE
+    if (sellerId) {
+      whereCondition.sellerId = sellerId;
+    }
+
     const sales = await Sale.findAll({
+      where: whereCondition, // Akan kosong jika tidak ada sellerId di URL
       include: [
         { 
           model: SaleItem, 
-          as: 'items', // Harus sama dengan as di model Sale.associate
+          as: 'items', 
           include: [{ model: Product }] 
         },
+        { model: Customer }, // Opsional: sertakan data customer jika ada
       ],
-      order: [['createdAt', 'DESC']], // Gunakan createdAt jika kolom 'date' bermasalah
+      order: [['createdAt', 'DESC']],
     });
 
     res.json({ success: true, data: sales });
   } catch (err) {
-    console.error('Error fetching sales:', err); // Lihat detail error di terminal aaPanel!
-    res.status(500).json({ success: false, message: err.message }); // Ubah ke err.message untuk debug
+    console.error('Error fetching sales:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

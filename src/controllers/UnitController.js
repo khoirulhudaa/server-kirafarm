@@ -4,21 +4,33 @@
   // GET semua unit (hanya ACTIVE)
   const getAll = async (req, res) => {
     try {
+      // Ambil sellerId dari query params: /units?sellerId=xxx
+      const { sellerId } = req.query;
+
+      // Default filter: hanya yang ACTIVE
+      const whereCondition = { status: 'ACTIVE' };
+
+      // Jika sellerId disertakan, tambahkan ke filter WHERE
+      if (sellerId) {
+        whereCondition.sellerId = sellerId;
+      }
+
       const units = await Unit.findAll({
-        where: { status: 'ACTIVE' },
-        attributes: ['id', 'name', 'fullName', 'description', 'status', 'createdAt', 'updatedAt'],
+        where: whereCondition,
+        attributes: ['id', 'name', 'fullName', 'description', 'status', 'sellerId', 'createdAt', 'updatedAt'],
         order: [['createdAt', 'DESC']],
       });
 
       res.json({
         success: true,
+        count: units.length,
         data: units,
       });
     } catch (err) {
       console.error('Error fetching units:', err);
       res.status(500).json({
         success: false,
-        message: 'Gagal mengambil data satuan',
+        message: err.message || 'Gagal mengambil data satuan',
       });
     }
   };

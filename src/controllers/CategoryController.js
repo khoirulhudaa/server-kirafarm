@@ -4,25 +4,36 @@ const { Category } = require('../models');
 // GET semua kategori (hanya yang ACTIVE by default)
 const getAll = async (req, res) => {
   try {
+    // Ambil sellerId dari query params: /categories?sellerId=xxx
+    const { sellerId } = req.query;
+
+    // Default filter: hanya yang ACTIVE
+    const whereCondition = { status: 'ACTIVE' };
+
+    // Jika sellerId disertakan di params, tambahkan ke filter WHERE
+    if (sellerId) {
+      whereCondition.sellerId = sellerId;
+    }
+
     const categories = await Category.findAll({
-      where: { status: 'ACTIVE' },
-      attributes: ['id', 'name', 'description', 'status', 'createdAt', 'updatedAt'],
+      where: whereCondition, 
+      attributes: ['id', 'name', 'description', 'status', 'sellerId', 'createdAt', 'updatedAt'],
       order: [['createdAt', 'DESC']],
     });
 
     res.json({
       success: true,
+      count: categories.length, // Tambahan info jumlah data
       data: categories,
     });
   } catch (err) {
     console.error('Error fetching categories:', err);
     res.status(500).json({
       success: false,
-      message: 'Gagal mengambil data kategori',
+      message: err.message || 'Gagal mengambil data kategori',
     });
   }
 };
-
 // GET kategori berdasarkan ID
 const getById = async (req, res) => {
   try {
