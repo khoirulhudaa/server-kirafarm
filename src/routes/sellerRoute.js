@@ -25,13 +25,13 @@ router.post('/register',
 // --- ADMIN ONLY ROUTES ---
 // Mengambil semua pendaftar seller
 router.get('/', 
-    AuthMiddleware(['ADMIN', 'OWNER']), 
+    AuthMiddleware(['ADMIN', 'OWNER', 'SELLER']), 
     getAllSellers
 );
 
 // Approve atau Reject seller
 router.patch('/status/:id', 
-    AuthMiddleware(['ADMIN', 'OWNER']), 
+    AuthMiddleware(['ADMIN', 'OWNER', 'SELLER']), 
     updateSellerStatus
 );
 

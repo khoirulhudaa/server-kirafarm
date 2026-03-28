@@ -15,8 +15,8 @@ router.get('/', getAll);
 router.get('/:id', getById);
 
 // Protected
-router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'STAFF']), create); // STAFF boleh tambah pelanggan
-router.put('/:id', AuthMiddleware(['OWNER', 'ADMIN', 'STAFF']), update);
-router.patch('/:id/deactivate', AuthMiddleware(['OWNER', 'ADMIN']), destroy);
+router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), create); // SELLER boleh tambah pelanggan
+router.put('/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), update);
+router.patch('/:id/deactivate', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), destroy);
 
 module.exports = router;
