@@ -75,37 +75,48 @@ const getMyProducts = async (req, res) => {
   try {
     const { sellerId } = req.query;
 
-    // 1. Log untuk memastikan ID yang masuk ke backend bersih
-    console.log("--- QUERY DEBUG ---");
-    console.log("Raw SellerID dari Query:", sellerId);
-    
     if (!sellerId) {
-      return res.status(400).json({ success: false, message: 'sellerId wajib dikirim' });
+      return res.status(400).json({ success: false, message: 'ID Seller wajib dikirim' });
     }
 
-    const products = await Product.findAll({
-      where: { 
-        // Gunakan trim() untuk membuang spasi tak kasat mata
-        sellerId: sellerId.trim() 
-      }, 
+    // Ambil data Seller beserta daftar Produknya
+    const sellerData = await Seller.findOne({
+      where: { id: sellerId.trim() },
       include: [
-        { model: Category, attributes: ['name'], required: false },
-        { model: Unit, attributes: ['name'], required: false },
+        {
+          model: Product,
+          as: 'products', // Harus sama dengan alias di model Seller
+          include: [
+            { model: Category, attributes: ['name'] },
+            { model: Unit, attributes: ['name'] }
+          ]
+        }
       ],
-      order: [['createdAt', 'DESC']],
-      logging: console.log, // <--- LIHAT QUERY SQL DI TERMINAL
+      // Mengurutkan produk dari yang terbaru
+      order: [[ { model: Product, as: 'products' }, 'createdAt', 'DESC' ]]
     });
 
-    console.log("Jumlah produk ditemukan:", products.length);
+    // Jika sellerId salah/tidak ada di tabel Seller
+    if (!sellerData) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Toko tidak ditemukan di database' 
+      });
+    }
 
     res.json({ 
       success: true, 
-      count: products.length, 
-      data: products 
+      count: sellerData.products ? sellerData.products.length : 0,
+      data: sellerData.products || [] 
     });
+
   } catch (err) {
-    console.error("ERROR getMyProducts:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("ERROR getMyProducts Alternative:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal memproses data seller',
+      error: err.message 
+    });
   }
 };
 

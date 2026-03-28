@@ -37,8 +37,14 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Seller.associate = (models) => {
-    // Tetap menggunakan alias 'account' agar sinkron dengan Controller
+    // Relasi ke User (Existing)
     Seller.belongsTo(models.User, { foreignKey: 'userId', as: 'account' });
+
+    // TAMBAHKAN INI: Relasi ke Product
+    Seller.hasMany(models.Product, { 
+      foreignKey: 'sellerId', 
+      as: 'products' // Alias ini yang akan dipanggil di Controller
+    });
   };
 
   return Seller;
