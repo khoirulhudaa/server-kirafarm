@@ -96,13 +96,20 @@ const XenditController = {
       const sale = await Sale.findByPk(orderId);
 
       if (!sale) {
-        return res.status(404).json({ success: false, message: 'Order tidak ditemukan' });
+        return res.status(404).json({
+          success: false,
+          message: 'Order tidak ditemukan'
+        });
       }
+
+      // ✅ HITUNG TOTAL FINAL (produk + ongkir)
+      const finalAmount =
+        Number(sale.totalAmount) + Number(sale.shippingCost || 0);
 
       const xenditInvoice = await xenditClient.Invoice.createInvoice({
         data: {
           externalId: sale.id,
-          amount: sale.totalAmount,
+          amount: finalAmount, // 🔥 FIX DI SINI
           description: `Pembayaran ${sale.invoiceNumber}`,
           customer: {
             givenNames: sale.customerName,
@@ -114,7 +121,12 @@ const XenditController = {
         }
       });
 
-      await sale.update({ status: 'WAITING_PAYMENT' });
+      // ✅ optional tapi disarankan
+      await sale.update({
+        status: 'WAITING_PAYMENT',
+        grandTotal: finalAmount,
+        paymentUrl: xenditInvoice.invoiceUrl
+      });
 
       res.json({
         success: true,
@@ -123,7 +135,10 @@ const XenditController = {
 
     } catch (err) {
       console.error(err);
-      res.status(500).json({ success: false, message: err.message });
+      res.status(500).json({
+        success: false,
+        message: err.message
+      });
     }
   },
 
