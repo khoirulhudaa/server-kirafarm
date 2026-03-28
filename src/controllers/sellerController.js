@@ -19,23 +19,36 @@ const streamUpload = (fileBuffer, folderName) => {
 // 1. Ambil semua data seller (untuk Admin)
 const getAllSellers = async (req, res) => {
   try {
-    // Kita ambil data seller beserta info dasar User-nya
     const sellers = await Seller.findAll({
       order: [['createdAt', 'DESC']],
       include: [{
         model: User,
-        as: 'account', // <--- HARUS SAMA dengan yang di Model
+        as: 'account', // Pastikan di Model Seller.associate sudah pakai alias 'account'
         attributes: ['id', 'name', 'email', 'role']
       }]
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
+      message: 'Berhasil mengambil daftar pendaftaran seller',
       data: sellers
     });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Gagal mengambil data seller' });
+    // Log error di console server (VPS) untuk debugging
+    console.error('Error [getAllSellers]:', err);
+
+    // Kirim respons error yang detail ke client
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data seller dari server',
+      error: {
+        name: err.name, // Contoh: SequelizeDatabaseError atau SequelizeConnectionError
+        message: err.message, // Pesan error spesifik (misal: "column user.username does not exist")
+        // Detail tambahan jika error berasal dari validasi database (Sequelize)
+        details: err.errors ? err.errors.map(e => e.message) : null 
+      }
+    });
   }
 };
 
