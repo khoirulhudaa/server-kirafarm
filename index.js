@@ -15,6 +15,7 @@ const swaggerSpec = require('./src/config/swagger');
 // Import semua routes
 const authRoutes = require('./src/routes/AuthRoute');
 const productRoutes = require('./src/routes/ProductRoute');
+const sellerRoutes = require('./src/routes/sellerRoute');
 const categoryRoutes = require('./src/routes/CategoryRoute');
 const unitRoutes = require('./src/routes/UnitRoute');
 const saleRoutes = require('./src/routes/SaleRoute');
@@ -47,6 +48,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/xendit', xenditRoutes);
 app.use('/api/units', unitRoutes);
+app.use('/api/seller', sellerRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/customers', customerRoutes);

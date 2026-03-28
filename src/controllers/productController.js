@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
 const { Product, Category, Unit } = require('../models');
+const seller = require('../models/seller');
 const cloudinary = require('cloudinary').v2;
 
 // Konfigurasi Cloudinary
@@ -9,10 +10,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-/**
- * Helper: Mengambil Public ID dari URL Cloudinary
- * Contoh: ".../products/xyz123.jpg" -> "products/xyz123"
- */
 const getPublicIdFromUrl = (url) => {
   if (!url) return null;
   const parts = url.split('/');
@@ -43,6 +40,7 @@ const getAll = async (req, res) => {
       include: [
         { model: Category, attributes: ['id', 'name'] },
         { model: Unit, attributes: ['id', 'name', 'fullName'] },
+        { model: seller, attributes: ['id', 'namaToko', 'slug'] },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -53,6 +51,28 @@ const getAll = async (req, res) => {
   }
 };
 
+const getMyProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.sellerId; // Diambil dari token
+
+    if (!sellerId) {
+      return res.status(400).json({ success: false, message: 'ID Seller tidak ditemukan' });
+    }
+
+    const products = await Product.findAll({
+      where: { sellerId: sellerId }, // Filter berdasarkan seller
+      include: [
+        { model: Category, attributes: ['name'] },
+        { model: Unit, attributes: ['name'] },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json({ success: true, data: products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal mengambil data produk seller' });
+  }
+};
 // GET produk berdasarkan ID
 const getById = async (req, res) => {
   try {
@@ -71,6 +91,11 @@ const getById = async (req, res) => {
 const create = async (req, res) => {
   try {
     const { code, name, price, stock, description, origin, categoryId, unitId } = req.body;
+    const sellerId = req.user.sellerId;
+    
+    if (!sellerId) {
+      return res.status(403).json({ success: false, message: 'Hanya akun seller yang bisa menambah produk' });
+    }
 
     // Validasi data wajib
     if (!code || !name || !price || !categoryId || !unitId) {
@@ -97,6 +122,7 @@ const create = async (req, res) => {
       status: 'ACTIVE',
       categoryId,
       unitId,
+      sellerId
     });
 
     const newProduct = await Product.findByPk(product.id, { include: [Category, Unit] });
@@ -114,10 +140,16 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
+    const sellerId = req.user.sellerId;
     const { name, code, price, stock, description, origin, categoryId, unitId } = req.body;
 
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ success: false, message: 'Produk tidak ditemukan' });
+
+    // SECURITY CHECK: Pastikan seller hanya mengupdate produk miliknya sendiri
+    if (product.sellerId !== sellerId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Anda tidak memiliki akses ke produk ini' });
+    }
 
     let thumbnailUrl = product.thumbnail;
 
@@ -173,7 +205,13 @@ const hardDelete = async (req, res) => {
   try {
     const { id } = req.params;
     const product = await Product.findByPk(id);
+    const sellerId = req.user.sellerId;
     if (!product) return res.status(404).json({ success: false, message: 'Produk tidak ditemukan' });
+
+    // SECURITY CHECK
+    if (product.sellerId !== sellerId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Akses ditolak' });
+    }
 
     if (product.thumbnail) {
       const publicId = getPublicIdFromUrl(product.thumbnail);
@@ -188,4 +226,4 @@ const hardDelete = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, softDelete, hardDelete };
+module.exports = { getAll, getById, create, update, softDelete, hardDelete, getMyProducts };

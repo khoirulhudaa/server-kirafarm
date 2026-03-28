@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('ACTIVE', 'INACTIVE'),
       defaultValue: 'ACTIVE',
     },
+    sellerId: {
+      type: DataTypes.STRING(36),
+      allowNull: false,
+    }
   }, {
     timestamps: true,
     charset: 'utf8mb4',

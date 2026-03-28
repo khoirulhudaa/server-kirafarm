@@ -12,6 +12,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     origin: DataTypes.STRING,
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
+    sellerId: {
+      type: DataTypes.STRING(36),
+      allowNull: false, // Wajib ada pemiliknya
+    },
     // HAPUS categoryId dan unitId dari sini!
   }, { 
     timestamps: true,
@@ -29,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
   });
   
   // Tambahkan associate
+  Product.associate = (models) => {
+    Product.belongsTo(models.Seller, { foreignKey: 'sellerId', as: 'seller' });
+    // associate lainnya (category, unit) tetap ada
+  };
   Product.associate = (models) => {
     Product.belongsTo(models.Category, {
       foreignKey: 'categoryId',
