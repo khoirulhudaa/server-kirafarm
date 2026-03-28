@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { registerSeller } = require('../controllers/sellerController');
+const AuthMiddleware = require('../middlewares/AuthMiddleware');
 
 // Gunakan Memory Storage agar tidak menyampah di server VPS
 const storage = multer.memoryStorage();
