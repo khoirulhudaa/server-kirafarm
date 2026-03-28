@@ -79,24 +79,22 @@ const getMyProducts = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID Seller wajib dikirim' });
     }
 
-    // Ambil data Seller beserta daftar Produknya
     const sellerData = await Seller.findOne({
       where: { id: sellerId.trim() },
       include: [
         {
           model: Product,
-          as: 'products', // Harus sama dengan alias di model Seller
+          as: 'products', 
           include: [
             { model: Category, attributes: ['name'] },
             { model: Unit, attributes: ['name'] }
           ]
         }
       ],
-      // Mengurutkan produk dari yang terbaru
       order: [[ { model: Product, as: 'products' }, 'createdAt', 'DESC' ]]
     });
 
-    // Jika sellerId salah/tidak ada di tabel Seller
+    // 1. Cek apakah Toko ada
     if (!sellerData) {
       return res.status(404).json({ 
         success: false, 
@@ -104,14 +102,25 @@ const getMyProducts = async (req, res) => {
       });
     }
 
+    // 2. Cek apakah produk dalam Toko tersebut kosong
+    if (!sellerData.products || sellerData.products.length === 0) {
+      return res.json({ 
+        success: true, 
+        count: 0,
+        message: "Data masih kosong....", // Pesan sesuai permintaan
+        data: [] 
+      });
+    }
+
+    // 3. Jika ada datanya
     res.json({ 
       success: true, 
-      count: sellerData.products ? sellerData.products.length : 0,
-      data: sellerData.products || [] 
+      count: sellerData.products.length,
+      data: sellerData.products 
     });
 
   } catch (err) {
-    console.error("ERROR getMyProducts Alternative:", err.message);
+    console.error("ERROR getMyProducts:", err.message);
     res.status(500).json({ 
       success: false, 
       message: 'Gagal memproses data seller',
