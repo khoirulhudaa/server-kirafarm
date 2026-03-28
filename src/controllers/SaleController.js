@@ -60,8 +60,16 @@ const getById = async (req, res) => {
 const create = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
-
-    const { customerName, customerId, items, shippingAddress, customerPhone, type, pickupDate, holdingCost } = req.body;
+    const { 
+      customerName, 
+      customerId, 
+      items, 
+      shippingAddress, 
+      customerPhone, 
+      type, 
+      pickupDate, 
+      holdingCost 
+    } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Keranjang kosong' });
@@ -70,17 +78,21 @@ const create = async (req, res) => {
     const saleId = randomUUID();
     const saleItems = [];
     let totalAmount = 0;
+    let finalSellerId = null; // Variable untuk menampung sellerId
 
     for (const item of items) {
-      // 1. Cari produk berdasarkan ID yang dikirim frontend
       const product = await Product.findByPk(item.productId);
       
-      // 2. CEK: Jika produk tidak ditemukan, hentikan proses agar tidak error
       if (!product) {
-        throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan di database.`);
+        throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan.`);
       }
 
-      // 3. Sekarang aman mengakses .price
+      // --- AMBIL SELLER ID DARI PRODUK ---
+      // Kita asumsikan transaksi ini milik seller dari produk tersebut
+      if (!finalSellerId) {
+        finalSellerId = product.sellerId; 
+      }
+
       const subtotal = parseFloat(product.price) * item.quantity;
       totalAmount += subtotal;
 
@@ -88,7 +100,6 @@ const create = async (req, res) => {
         id: randomUUID(),
         saleId: saleId,
         productId: product.id,
-        // Gunakan data dari database (server-side) bukan dari req.body untuk keamanan harga
         productName: product.name,
         price: product.price,
         quantity: item.quantity,
@@ -96,29 +107,29 @@ const create = async (req, res) => {
       });
     }
 
-    // ... Sisa kode create Sale dan bulkCreate SaleItem tetap sama ...
+    // Buat data Sale dengan menyertakan sellerId
     const sale = await Sale.create({
       id: saleId,
       invoiceNumber: `INV-${Date.now()}`,
+      sellerId: finalSellerId, // <--- SELLER ID DIMASUKKAN DI SINI
       customerName,
-      customerPhone: customerPhone || '000000', // Pastikan ini terisi
+      customerPhone: customerPhone || '000000',
       customerId: customerId || null,
       shippingAddress,
       totalAmount,
       shippingCost: 0,
       status: 'PENDING',
-      type: type || 'DIRECT', // Tambahkan ini
-      pickupDate: pickupDate || null, // Tambahkan ini
-      holdingCost: holdingCost || 0 // Tambahkan ini
+      type: type || 'DIRECT',
+      pickupDate: pickupDate || null,
+      holdingCost: holdingCost || 0
     }, { transaction: t });
 
     await SaleItem.bulkCreate(saleItems, { transaction: t });
+    
     await t.commit();
-
     res.status(201).json({ success: true, data: sale });
   } catch (err) {
     if (t) await t.rollback();
-    // Berikan pesan error yang lebih jelas ke frontend
     res.status(500).json({ success: false, message: err.message });
   }
 };

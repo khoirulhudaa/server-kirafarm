@@ -8,6 +8,7 @@ const xenditClient = new Xendit({
 });
 
 const XenditController = {
+
  createOrder: async (req, res) => {
     const t = await Sale.sequelize.transaction();
     try {
@@ -19,10 +20,13 @@ const XenditController = {
       const saleId = randomUUID();
       let totalAmount = 0;
       const saleItemsData = [];
+      let finalSellerId = null;
 
       for (const item of items) {
         const product = await Product.findByPk(item.productId);
         if (!product) throw new Error(`Produk ID ${item.productId} tidak ditemukan`);
+        
+        if (!finalSellerId) finalSellerId = product.sellerId;
 
         const subtotal = parseFloat(product.price) * item.quantity;
         totalAmount += subtotal;
@@ -39,15 +43,22 @@ const XenditController = {
       }
 
       totalAmount += parseFloat(holdingCost || 0);
+      // Pastikan amount bulat untuk Xendit
+      const xenditAmount = Math.round(totalAmount);
+      
+      const product = await Product.findByPk(items[0].productId); 
+      const sellerId = product.sellerId; // Ambil sellerId dari produk pertama
 
       const newSale = await Sale.create({
         id: saleId,
         invoiceNumber: `INV-${Date.now()}`,
         customerName,
         customerPhone,
+        customerEmail,
         shippingAddress,
-        totalAmount,
-        status: 'PENDING_PAYMENT',
+        sellerId: finalSellerId,
+        totalAmount: xenditAmount,
+        status: 'PENDING',
         type: type || 'DIRECT',
         pickupDate: pickupDate || null,
         holdingCost: holdingCost || 0
@@ -141,41 +152,6 @@ const XenditController = {
       });
     }
   },
-
-  // handleWebhook: async (req, res) => {
-  //   const { external_id, status } = req.body;
-  //   const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
-    
-  //   try {
-  //     if (status === 'PAID' || status === 'SETTLED') {
-  //       await Sale.update(
-  //         { status: 'PAID' },
-  //         { where: { id: external_id } }
-  //       );
-
-  //       // 3. Kurangi stok setiap produk
-  //       for (const item of currentSale.items) {
-  //         const product = await Product.findByPk(item.productId, { transaction: t });
-          
-  //         if (product) {
-  //           const newStock = product.stock - item.quantity;
-            
-  //           if (newStock < 0) {
-  //             // Opsional: Berikan peringatan jika stok sampai minus
-  //             console.warn(`⚠️ Stok produk ${product.name} menjadi negatif!`);
-  //           }
-
-  //           await product.update({ stock: newStock }, { transaction: t });
-  //         }
-  //       }
-  //       console.log(`✅ Order ${external_id} Berhasil Dibayar`);
-  //     }
-  //     res.status(200).send('Webhook Received');
-  //   } catch (error) {
-  //     console.error("Webhook Error:", error);
-  //     res.status(500).send('Webhook Error');
-  //   }
-  // },
 
   handleWebhook: async (req, res) => {
     const { external_id, status } = req.body;
@@ -284,4 +260,43 @@ const XenditController = {
   }
 };
 
+
+
 module.exports = XenditController;
+
+
+
+  // handleWebhook: async (req, res) => {
+  //   const { external_id, status } = req.body;
+  //   const t = await Sale.sequelize.transaction(); // Gunakan transaksi agar data konsisten
+    
+  //   try {
+  //     if (status === 'PAID' || status === 'SETTLED') {
+  //       await Sale.update(
+  //         { status: 'PAID' },
+  //         { where: { id: external_id } }
+  //       );
+
+  //       // 3. Kurangi stok setiap produk
+  //       for (const item of currentSale.items) {
+  //         const product = await Product.findByPk(item.productId, { transaction: t });
+          
+  //         if (product) {
+  //           const newStock = product.stock - item.quantity;
+            
+  //           if (newStock < 0) {
+  //             // Opsional: Berikan peringatan jika stok sampai minus
+  //             console.warn(`⚠️ Stok produk ${product.name} menjadi negatif!`);
+  //           }
+
+  //           await product.update({ stock: newStock }, { transaction: t });
+  //         }
+  //       }
+  //       console.log(`✅ Order ${external_id} Berhasil Dibayar`);
+  //     }
+  //     res.status(200).send('Webhook Received');
+  //   } catch (error) {
+  //     console.error("Webhook Error:", error);
+  //     res.status(500).send('Webhook Error');
+  //   }
+  // },

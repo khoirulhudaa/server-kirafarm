@@ -30,6 +30,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED'), 
       defaultValue: 'PENDING' 
     },
+
+    balance: { 
+      type: DataTypes.DECIMAL(15, 2), 
+      defaultValue: 0 
+    },
+    totalEarnings: { 
+      type: DataTypes.DECIMAL(15, 2), 
+      defaultValue: 0 
+    },
   }, { 
     timestamps: true,
     charset: 'utf8mb4',

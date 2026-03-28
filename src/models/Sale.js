@@ -111,6 +111,15 @@
         type: DataTypes.STRING(36),
         allowNull: true,
       },
+
+      isSettledToSeller: { 
+        type: DataTypes.BOOLEAN, 
+        defaultValue: false 
+      },
+      settledAt: { 
+        type: DataTypes.DATE, 
+        allowNull: true 
+      },
     }, {
       timestamps: true,
       charset: 'utf8mb4',

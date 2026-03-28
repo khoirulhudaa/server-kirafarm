@@ -7,6 +7,8 @@ const errorHandler = require('./src/middlewares/ErroHandle');
 const sequelize = require('./src/config/database');
 require('dotenv').config(); // <--- WAJIB ADA DI BARIS PERTAMA
 const { initSocket } = require('./socket');
+const cron = require('node-cron');
+
 
 // Di index.js, setelah app.use(express.urlencoded(...))
 const swaggerUi = require('swagger-ui-express');
@@ -23,6 +25,13 @@ const customerRoutes = require('./src/routes/CustomerRoute');
 const userRoutes = require('./src/routes/UserRoute');
 const xenditRoutes = require('./src/routes/xenditRoute');
 const chatRoutes = require('./src/routes/chatRoute');
+const { processSellerSettlement } = require('./src/services/settlementService');
+
+// Berjalan setiap 15 menit untuk cek pesanan yang sudah "matang" (2 jam)
+cron.schedule('*/15 * * * *', () => {
+  console.log('Running auto-settlement check...');
+  processSellerSettlement();
+});
 
 // Load environment variables
 dotenv.config();
