@@ -87,11 +87,11 @@ const getMyProducts = async (req, res) => {
 
     const products = await Product.findAll({
       where: { sellerId: sellerId }, 
-      include: [
-        { model: Category, attributes: ['name'], required: false },
-        { model: Unit, attributes: ['name'], required: false },
-      ],
-      order: [['createdAt', 'DESC']],
+      // include: [
+      //   { model: Category, attributes: ['name'], required: false },
+      //   { model: Unit, attributes: ['name'], required: false },
+      // ],
+      // order: [['createdAt', 'DESC']],
     });
 
     res.json({ 
