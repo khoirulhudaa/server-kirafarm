@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, Seller } = require('../models');
 const bcrypt = require('bcrypt');
 const { randomUUID } = require('crypto');
 
@@ -232,6 +232,32 @@ const getById = async (req, res) => {
   }
 };
 
+exports.getUserProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Cari user dulu
+    const user = await User.findByPk(id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User tidak ditemukan" });
+    }
+
+    // 2. Jika role adalah SELLER, ambil data detail dari tabel Seller
+    let profileData = user.toJSON();
+    if (user.role === 'SELLER') {
+      const sellerData = await Seller.findOne({ where: { userId: id } });
+      profileData.seller = sellerData;
+    }
+
+    res.json({ success: true, data: profileData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   create,
   updateProfile,
@@ -239,4 +265,5 @@ module.exports = {
   softDelete,
   getAll,
   getById,
+  getUserProfile
 };

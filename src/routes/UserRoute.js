@@ -6,6 +6,7 @@ const {
   softDelete,
   getAll,
   getById,
+  getUserProfile,
 } = require('../controllers/UserController');
 const AuthMiddleware = require('../middlewares/AuthMiddleware');
 
@@ -14,6 +15,7 @@ const router = express.Router();
 // Hanya OWNER & ADMIN yang bisa lihat semua user
 router.get('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getAll);
 router.get('/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getById);
+router.get('/get-profile/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getUserProfile);
 
 // Hanya OWNER & ADMIN yang bisa buat user baru
 router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), create);
