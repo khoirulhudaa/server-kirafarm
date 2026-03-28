@@ -67,7 +67,7 @@ const XenditController = {
             mobileNumber: customerPhone,
             email: customerEmail,
           },
-          successRedirectUrl: `https://kirafarm.kiraproject.id/history`,
+          successRedirectUrl: `https://kirafarm.kiraproject.id/order`,
           failureRedirectUrl: `https://kirafarm.kiraproject.id/checkout`,
           currency: 'IDR',
         }
@@ -108,8 +108,8 @@ const XenditController = {
             givenNames: sale.customerName,
             mobileNumber: sale.customerPhone,
           },
-          successRedirectUrl: `https://kirafarm.kiraproject.id/history`,
-          failureRedirectUrl: `https://kirafarm.kiraproject.id/history`,
+          successRedirectUrl: `https://kirafarm.kiraproject.id/order`,
+          failureRedirectUrl: `https://kirafarm.kiraproject.id/order`,
           currency: 'IDR',
         }
       });
