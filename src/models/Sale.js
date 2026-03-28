@@ -109,7 +109,7 @@
 
       sellerId: {
         type: DataTypes.STRING(36),
-        allowNull: false,
+        allowNull: true,
       },
     }, {
       timestamps: true,
@@ -123,7 +123,7 @@
         foreignKey: 'sellerId',
         as: 'seller'
       });
-      
+
       Sale.belongsTo(models.Customer, {
         foreignKey: 'customerId',
         as: 'customer'

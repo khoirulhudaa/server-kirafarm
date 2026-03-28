@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     sellerId: {
       type: DataTypes.STRING(36),
-      allowNull: false,
+      allowNull: true,
     }
   }, {
     timestamps: true,

@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
     sellerId: {
       type: DataTypes.STRING(36),
-      allowNull: false, // Wajib ada pemiliknya
+      allowNull: true, // Wajib ada pemiliknya
     },
     // HAPUS categoryId dan unitId dari sini!
   }, { 
