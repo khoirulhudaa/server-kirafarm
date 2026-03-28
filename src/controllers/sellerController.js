@@ -1,6 +1,5 @@
 const { randomUUID } = require('crypto');
-const { Seller } = require('../models');
-const User = require('../models/User');
+const { Seller, User } = require('../models');
 const cloudinary = require('cloudinary').v2;
 
 const streamUpload = (fileBuffer, folderName) => {
