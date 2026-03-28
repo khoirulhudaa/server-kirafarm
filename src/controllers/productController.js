@@ -73,24 +73,42 @@ const getAll = async (req, res) => {
 
 const getMyProducts = async (req, res) => {
   try {
-    const sellerId = req.user.sellerId; // Diambil dari token
+    // DEBUG: Cek isi req.user di terminal server
+    console.log("DEBUG req.user:", JSON.stringify(req.user, null, 2));
+
+    // Ambil sellerId dengan fallback (antisipasi perbedaan struktur token)
+    const sellerId = req.user.seller?.id || req.user.sellerId || req.user.id;
+
+    console.log("DEBUG target sellerId:", sellerId);
 
     if (!sellerId) {
-      return res.status(400).json({ success: false, message: 'ID Seller tidak ditemukan' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID Seller tidak ditemukan di token' 
+      });
     }
 
     const products = await Product.findAll({
-      where: { sellerId: sellerId }, // Filter berdasarkan seller
+      where: { sellerId: sellerId }, 
       include: [
-        { model: Category, attributes: ['name'] },
-        { model: Unit, attributes: ['name'] },
+        { model: Category, attributes: ['name'], required: false },
+        { model: Unit, attributes: ['name'], required: false },
       ],
       order: [['createdAt', 'DESC']],
     });
 
-    res.json({ success: true, data: products });
+    res.json({ 
+      success: true, 
+      count: products.length,
+      data: products 
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Gagal mengambil data produk seller' });
+    console.error("ERROR getMyProducts:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal mengambil data produk seller',
+      error: err.message 
+    });
   }
 };
 
