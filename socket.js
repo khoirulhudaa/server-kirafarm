@@ -18,6 +18,12 @@ const initSocket = (server) => {
       socket.join(orderId);
     });
 
+    socket.on("send_message", (data) => {
+      console.log("New Message via Socket:", data);
+      // Broadcast ke semua orang di room tersebut termasuk pengirim
+      io.to(data.orderId).emit("receive_message", data);
+    });
+
     socket.on("disconnect", () => {
       console.log("🔴 User disconnected:", socket.id);
     });

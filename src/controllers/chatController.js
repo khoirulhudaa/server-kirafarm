@@ -1,5 +1,6 @@
 const { ChatMessage } = require('../models');
 const { randomUUID } = require('crypto');
+const { getIO } = require('../../socket'); // <--- PASTIKAN PATH INI BENAR
 
 exports.getMessages = async (req, res) => {
   const { orderId } = req.params;
@@ -21,6 +22,9 @@ exports.sendMessage = async (req, res) => {
     sender,
     message
   });
+
+  const io = getIO();
+  io.to(orderId).emit("receive_message", newMsg); // Kirim ke semua orang di room orderId
 
   res.json({ success: true, data: newMsg });
 };
