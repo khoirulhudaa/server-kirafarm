@@ -153,15 +153,22 @@ const updateProfileFull = async (req, res) => {
     await t.commit();
 
     // 4. Ambil data terbaru untuk dikirim balik ke frontend
-    const updatedData = await User.findByPk(id, {
-      attributes: { exclude: ['password'] },
-      include: user.role === 'SELLER' ? [{ model: Seller, as: 'seller' }] : []
+   const updatedUser = await User.findByPk(id, {
+      attributes: { exclude: ['password'] }
     });
+
+    let finalData = updatedUser.toJSON();
+
+    if (updatedUser.role === 'SELLER') {
+      // Ambil data seller secara manual agar strukturnya identik dengan getUserProfile
+      const sellerData = await Seller.findOne({ where: { userId: id } });
+      finalData.seller = sellerData; 
+    }
 
     res.json({
       success: true,
       message: 'Profil dan data bisnis berhasil diperbarui',
-      data: updatedData,
+      data: finalData, // Sekarang strukturnya 100% sama dengan getUserProfile
     });
 
   } catch (err) {
