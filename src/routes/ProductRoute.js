@@ -18,10 +18,10 @@ const upload = multer({ storage });
 const router = express.Router();
 
 // Public: semua bisa baca
+router.get('/my-products', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getMyProducts);
 router.get('/', getAll);
 router.get('/:id', getById);
 // Protected: hanya OWNER/ADMIN yang bisa ubah data
-router.get('/my-products', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getMyProducts);
 router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), upload.single('thumbnail'), create);
 router.put('/:id', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), upload.single('thumbnail'), update);
 router.patch('/:id/deactivate', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), softDelete); // soft delete
