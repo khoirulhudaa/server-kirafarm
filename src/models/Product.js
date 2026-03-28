@@ -16,6 +16,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(36),
       allowNull: true, // Wajib ada pemiliknya
     },
+    categoryId: { type: DataTypes.STRING(36), allowNull: true },
+    unitId: { type: DataTypes.STRING(36), allowNull: true },
     // HAPUS categoryId dan unitId dari sini!
   }, { 
     timestamps: true,
@@ -29,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
   
       // Index untuk pencarian nama (partial search)
       { fields: ['name'] },
+      { fields: ['sellerId'] }
     ]
   });
   

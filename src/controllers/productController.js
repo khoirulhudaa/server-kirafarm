@@ -32,21 +32,50 @@ const streamUpload = (fileBuffer) => {
   });
 };
 
-// GET semua produk
+// GET semua produk dengan Detail Error
 const getAll = async (req, res) => {
   try {
     const products = await Product.findAll({
       include: [
-        { model: Category, attributes: ['id', 'name'] },
-        { model: Unit, attributes: ['id', 'name', 'fullName'] },
-        { model: Seller, attributes: ['id', 'namaToko', 'slug'] },
+        { 
+          model: Category, 
+          attributes: ['id', 'name'],
+          required: false // Agar produk tetap muncul meski kategori null
+        },
+        { 
+          model: Unit, 
+          attributes: ['id', 'name', 'fullName'],
+          required: false 
+        },
+        { 
+          model: Seller, 
+          attributes: ['id', 'namaToko', 'slug'],
+          required: false 
+        },
       ],
       order: [['createdAt', 'DESC']],
     });
+
     res.json({ success: true, data: products });
   } catch (err) {
-    console.error('Error fetching products:', err);
-    res.status(500).json({ success: false, message: 'Gagal mengambil data produk' });
+    // Log ke terminal (Server Side) untuk melihat stack trace lengkap
+    console.error('--- DEBUG ERROR START ---');
+    console.error('Message:', err.message);
+    console.error('Name:', err.name);
+    if (err.sql) console.error('SQL Query:', err.sql); // Muncul jika error database
+    console.error('--- DEBUG ERROR END ---');
+
+    // Kirim detail ke frontend (Client Side) agar Anda tahu apa yang salah
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gagal mengambil data produk',
+      errorType: err.name,
+      errorMessage: err.message,
+      // hint membantu menebak penyebab umum
+      hint: err.message.includes('belongsTo') 
+            ? 'Cek relasi/association di model Product' 
+            : 'Cek apakah kolom sellerId/categoryId sudah ada di tabel Products'
+    });
   }
 };
 
