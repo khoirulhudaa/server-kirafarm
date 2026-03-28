@@ -28,58 +28,48 @@
     }
   };
 
-  // const login = async (req, res) => {
-  //   try {
-  //     const { email, password } = req.body;
-  //     const user = await User.findOne({ where: { email } });
-  //     if (!user || !(await bcrypt.compare(password, user.password))) {
-  //       return res.status(401).json({ success: false, message: 'Invalid credentials' });
-  //     }
-  //     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  //     res.json({ success: true, token, user });
-  //   } catch (err) {
-  //     res.status(500).json({ success: false, message: err.message });
-  //   }
-  // };
-
-
   const login = async (req, res) => {
     try {
       const { email, password } = req.body;
       let userData = null;
-      let userType = ''; // Untuk membedakan asal tabel
-      let sellerId = null;
+      let sellerInfo = null;
+      let finalSellerId = null;
 
-      // 1. Cari di tabel User dulu (Buyer/Staff/Admin)
-      userData = await User.findOne({ where: { email } });
-      
+      // 1. Cari di tabel User DAN sertakan relasi Seller (jika ada)
+      // Asumsi: Di model User sudah ada relasi as: 'seller'
+      userData = await User.findOne({ 
+        where: { email },
+        include: [{ model: Seller, as: 'seller' }] 
+      });
+
       if (userData) {
-        userType = 'USER';
+        // Jika ditemukan di tabel User, cek apakah dia punya data Seller terkait
+        finalSellerId = userData.seller ? userData.seller.id : null;
+        sellerInfo = userData.seller; // Simpan object seller jika ada
       } else {
-        // 2. Jika tidak ada di User, cari di tabel Seller
-        userData = await Seller.findOne({ where: { email } }); // Asumsi tabel Seller punya field email & password
+        // 2. Jika tidak ada di User, baru cari di tabel Seller
+        userData = await Seller.findOne({ where: { email } });
         if (userData) {
-          userType = 'SELLER';
-          sellerId = userData.id;
+          finalSellerId = userData.id;
+          sellerInfo = userData;
         }
       }
 
-      // 3. Validasi Password
+      // 3. Validasi User & Password
       if (!userData || !(await bcrypt.compare(password, userData.password))) {
         return res.status(401).json({ success: false, message: 'Email atau password salah' });
       }
 
-      console.log('USERDATA', userData)
-
-      // 4. Tentukan Role & Payload JWT
-      // Jika dari tabel Seller, role otomatis OWNER/SELLER
-      const role = userType === 'SELLER' ? 'OWNER' : userData.role;
+      // 4. Tentukan Role
+      // Jika data dari tabel Seller langsung, role otomatis OWNER. 
+      // Jika dari tabel User, gunakan role dari database.
+      const role = finalSellerId && !userData.role ? 'OWNER' : userData.role;
 
       const token = jwt.sign(
         { 
           id: userData.id, 
           role: role,
-          sellerId: sellerId // Akan berisi ID jika dia Seller, null jika dia Buyer
+          sellerId: finalSellerId 
         }, 
         process.env.JWT_SECRET, 
         { expiresIn: '7d' }
@@ -90,14 +80,20 @@
         token, 
         user: {
           id: userData.id,
-          name: userType === 'SELLER' ? userData.namaToko : userData.name, // Menyesuaikan field nama di tabel Seller
+          name: userData.name || userData.namaToko,
           email: userData.email,
           role: role,
-          sellerId: sellerId
+          // Pastikan object seller dikirim lengkap agar frontend bisa simpan ke localStorage
+          seller: sellerInfo ? {
+            id: sellerInfo.id,
+            namaToko: sellerInfo.namaToko,
+            slug: sellerInfo.slug
+          } : null
         } 
       });
 
     } catch (err) {
+      console.error("Login Error:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   };
