@@ -1,6 +1,5 @@
 const { randomUUID } = require('crypto');
-const { Product, Category, Unit } = require('../models');
-const seller = require('../models/seller');
+const { Product, Category, Unit, Seller } = require('../models');
 const cloudinary = require('cloudinary').v2;
 
 // Konfigurasi Cloudinary
@@ -40,7 +39,7 @@ const getAll = async (req, res) => {
       include: [
         { model: Category, attributes: ['id', 'name'] },
         { model: Unit, attributes: ['id', 'name', 'fullName'] },
-        { model: seller, attributes: ['id', 'namaToko', 'slug'] },
+        { model: Seller, attributes: ['id', 'namaToko', 'slug'] },
       ],
       order: [['createdAt', 'DESC']],
     });
