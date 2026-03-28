@@ -10,7 +10,10 @@ module.exports = (sequelize, DataTypes) => {
   }, { 
     timestamps: true,
     charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci' });
-
+    collate: 'utf8mb4_unicode_ci' 
+  });
+  User.associate = (models) => {
+    User.hasOne(models.Seller, { foreignKey: 'userId', as: 'seller' });
+  };
   return User;
 }

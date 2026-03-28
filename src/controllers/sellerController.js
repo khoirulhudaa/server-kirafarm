@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
 const { Seller } = require('../models');
+const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
 
 const streamUpload = (fileBuffer, folderName) => {
@@ -23,8 +24,8 @@ const getAllSellers = async (req, res) => {
       order: [['createdAt', 'DESC']],
       include: [{
         model: User,
-        as: 'user', // Sesuaikan dengan alias di relasi model Anda
-        attributes: ['id', 'username', 'email']
+        as: 'account', // <--- HARUS SAMA dengan yang di Model
+        attributes: ['id', 'name', 'email', 'role']
       }]
     });
 
