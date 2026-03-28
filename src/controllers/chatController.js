@@ -28,3 +28,38 @@ exports.sendMessage = async (req, res) => {
 
   res.json({ success: true, data: newMsg });
 };
+
+exports.deleteMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const msg = await ChatMessage.findByPk(id);
+    if (!msg) return res.status(404).json({ success: false });
+
+    const orderId = msg.orderId;
+    await msg.destroy();
+
+    // Broadcast ke socket bahwa pesan ini dihapus
+    getIO().to(orderId).emit("message_deleted", id);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+};
+
+exports.editMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+    const msg = await ChatMessage.findByPk(id);
+    
+    await msg.update({ message });
+
+    // Broadcast ke socket bahwa pesan ini diedit
+    getIO().to(msg.orderId).emit("message_edited", { id, message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+};
