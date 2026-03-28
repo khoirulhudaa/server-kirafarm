@@ -113,7 +113,7 @@ const registerSeller = async (req, res) => {
 
    // 3. Proses Upload ke Cloudinary (Jika ada file)
     let ktpUrl = null;
-    let selfieKtpUrl = null;
+    let npwpUrl = null;
     let produkUrl = null;
 
     if (req.files) {
@@ -121,9 +121,9 @@ const registerSeller = async (req, res) => {
         const resKtp = await streamUpload(req.files['ktp'][0].buffer, 'identity');
         ktpUrl = resKtp.secure_url;
       }
-      if (req.files['selfieKtp']) {
-        const resSelfie = await streamUpload(req.files['selfieKtp'][0].buffer, 'identity');
-        selfieKtpUrl = resSelfie.secure_url;
+      if (req.files['npwp']) {
+        const resSelfie = await streamUpload(req.files['npwp'][0].buffer, 'identity');
+        npwpUrl = resSelfie.secure_url;
       }
       if (req.files['produk']) {
         const resProduk = await streamUpload(req.files['produk'][0].buffer, 'samples');
@@ -138,7 +138,7 @@ const registerSeller = async (req, res) => {
       nama,
       nik,
       fotoKtp: ktpUrl,
-      fotoSelfieKtp: selfieKtpUrl,
+      fotoNpwp: npwpUrl,
       namaToko,
       slug,
       alamat,

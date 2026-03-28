@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     nama: { type: DataTypes.STRING, allowNull: false },
     nik: { type: DataTypes.STRING(16), allowNull: false },
     fotoKtp: { type: DataTypes.TEXT },
-    fotoSelfieKtp: { type: DataTypes.TEXT },
+    fotoNpwp: { type: DataTypes.TEXT }, // GANTI DI SINI (Sebelumnya fotoSelfieKtp)
     
     // Toko
     namaToko: { type: DataTypes.STRING, allowNull: false },
@@ -37,8 +37,9 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Seller.associate = (models) => {
+    // Tetap menggunakan alias 'account' agar sinkron dengan Controller
     Seller.belongsTo(models.User, { foreignKey: 'userId', as: 'account' });
-    };
+  };
 
   return Seller;
 };

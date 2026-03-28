@@ -16,9 +16,9 @@ router.post('/register',
     AuthMiddleware(['BUYER', 'STAFF', 'ADMIN']),
     upload.fields([
         { name: 'ktp', maxCount: 1 },
-        { name: 'selfieKtp', maxCount: 1 },
+        { name: 'npwp', maxCount: 1 }, // Ganti di sini
         { name: 'produk', maxCount: 1 }
-    ]), 
+    ]),
     registerSeller
 );
 
