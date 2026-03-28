@@ -73,18 +73,15 @@ const getAll = async (req, res) => {
 
 const getMyProducts = async (req, res) => {
   try {
-    // DEBUG: Cek isi req.user di terminal server
-    console.log("DEBUG req.user:", JSON.stringify(req.user, null, 2));
+    // Mengambil dari URL (?sellerId=...)
+    const { sellerId } = req.query;
 
-    // Ambil sellerId dengan fallback (antisipasi perbedaan struktur token)
-    const sellerId = req.user.seller?.id || req.user.sellerId || req.user.id;
-
-    console.log("DEBUG target sellerId:", sellerId);
+    console.log("DEBUG target sellerId from Query:", sellerId);
 
     if (!sellerId) {
       return res.status(400).json({ 
         success: false, 
-        message: 'ID Seller tidak ditemukan di token' 
+        message: 'Query parameter sellerId wajib dikirim' 
       });
     }
 
@@ -103,10 +100,10 @@ const getMyProducts = async (req, res) => {
       data: products 
     });
   } catch (err) {
-    console.error("ERROR getMyProducts:", err);
+    console.error("ERROR getMyProducts:", err.message);
     res.status(500).json({ 
       success: false, 
-      message: 'Gagal mengambil data produk seller',
+      message: 'Gagal mengambil data produk',
       error: err.message 
     });
   }
