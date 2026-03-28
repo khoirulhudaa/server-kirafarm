@@ -25,7 +25,7 @@ const registerSeller = async (req, res) => {
 
     // Ambil ID dari user yang sedang login (harus sudah BUYER)
     const userId = req.user.id; 
-    
+
     // 1. Cek apakah user ini sudah pernah mendaftar seller (biar tidak double)
     const alreadySeller = await Seller.findOne({ where: { userId } });
     if (alreadySeller) {
@@ -86,7 +86,12 @@ const registerSeller = async (req, res) => {
 
   } catch (err) {
     console.error('Seller registration error:', err);
-    res.status(500).json({ success: false, message: 'Gagal memproses pendaftaran' });
+    res.status(500).json({ 
+        success: false, 
+        message: 'Gagal memproses pendaftaran',
+        debug: err.message, // Kirim pesan error asli ke browser
+        stack: err.errors ? err.errors.map(e => e.message) : null // Detail error Sequelize
+    });
   }
 };
 
