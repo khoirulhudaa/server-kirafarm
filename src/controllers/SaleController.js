@@ -23,12 +23,12 @@ const getAll = async (req, res) => {
           as: 'items', 
           include: [{ model: Product }] 
         },
-        { model: Customer }, // Opsional: sertakan data customer jika ada
+        { model: Customer, as: 'customer' }, // Opsional: sertakan data customer jika ada
       ],
       order: [['createdAt', 'DESC']],
     });
 
-    res.json({ success: true, data: sales });
+    res.json({ success: true, data: sales, message: 'Berhasil daaptkan data!' });
   } catch (err) {
     console.error('Error fetching sales:', err);
     res.status(500).json({ success: false, message: err.message });
