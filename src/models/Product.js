@@ -35,22 +35,29 @@ module.exports = (sequelize, DataTypes) => {
     ]
   });
   
-  // Tambahkan associate
+// Gabungkan semua associate ke dalam SATU fungsi saja
   Product.associate = (models) => {
-    Product.belongsTo(models.Seller, { foreignKey: 'sellerId', as: 'seller' });
-    // associate lainnya (category, unit) tetap ada
-  };
-  Product.associate = (models) => {
+    // 1. Relasi ke Seller (Tambahkan alias 'seller' jika ingin dipanggil di include)
+    Product.belongsTo(models.Seller, { 
+      foreignKey: 'sellerId', 
+      as: 'seller' 
+    });
+
+    // 2. Relasi ke Category
     Product.belongsTo(models.Category, {
       foreignKey: 'categoryId',
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     });
+
+    // 3. Relasi ke Unit
     Product.belongsTo(models.Unit, {
       foreignKey: 'unitId',
       onDelete: 'SET NULL',
       onUpdate: 'CASCADE',
     });
+
+    // 4. Relasi ke SaleItem
     Product.hasMany(models.SaleItem, {
       foreignKey: 'productId',
       onDelete: 'CASCADE',
@@ -59,4 +66,4 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   return Product;
-}
+};

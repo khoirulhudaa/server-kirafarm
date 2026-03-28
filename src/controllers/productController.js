@@ -36,23 +36,14 @@ const streamUpload = (fileBuffer) => {
 const getAll = async (req, res) => {
   try {
     const products = await Product.findAll({
-      include: [
-        { 
-          model: Category, 
-          attributes: ['id', 'name'],
-          required: false // Agar produk tetap muncul meski kategori null
-        },
-        { 
-          model: Unit, 
-          attributes: ['id', 'name', 'fullName'],
-          required: false 
-        },
+     include: [
         { 
           model: Seller, 
-          attributes: ['id', 'namaToko', 'slug'],
-          required: false, 
-          as: 'seller',
+          as: 'seller', // Wajib ada karena di model didefinisikan pakai 'as'
+          attributes: ['id', 'namaToko', 'slug'] 
         },
+        { model: Category, attributes: ['name'] },
+        { model: Unit, attributes: ['name'] },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -90,10 +81,10 @@ const getMyProducts = async (req, res) => {
 
     const products = await Product.findAll({
       where: { sellerId: sellerId }, // Filter berdasarkan seller
-      // include: [
-      //   { model: Category, attributes: ['name'] },
-      //   { model: Unit, attributes: ['name'] },
-      // ],
+      include: [
+        { model: Category, attributes: ['name'] },
+        { model: Unit, attributes: ['name'] },
+      ],
       order: [['createdAt', 'DESC']],
     });
 
