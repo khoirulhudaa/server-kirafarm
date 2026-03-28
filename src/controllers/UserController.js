@@ -232,7 +232,7 @@ const getById = async (req, res) => {
   }
 };
 
-exports.getUserProfile = async (req, res) => {
+const getUserProfile = async (req, res) => {
   try {
     const { id } = req.params;
 
