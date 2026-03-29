@@ -314,6 +314,57 @@ const hardDelete = async (req, res) => {
   }
 };
 
+const confirmDelivery = async (req, res) => {
+  const t = await Sale.sequelize.transaction();
+  try {
+    const { id } = req.params;
+
+    const sale = await Sale.findByPk(id);
+    if (!sale) {
+      return res.status(404).json({ success: false, message: 'Pesanan tidak ditemukan' });
+    }
+
+    // Hanya pesanan yang sudah dikirim (SHIPPED) yang bisa dikonfirmasi
+    if (sale.status !== 'SHIPPED') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Hanya pesanan dengan status SHIPPED yang dapat dikonfirmasi.' 
+      });
+    }
+
+    // 1. Update status Sale menjadi COMPLETED
+    await sale.update({
+      status: 'COMPLETED',
+      completedAt: new Date()
+    }, { transaction: t });
+
+    // 2. Tambahkan saldo ke Seller (totalAmount + shippingCost)
+    if (sale.sellerId) {
+      const seller = await Seller.findByPk(sale.sellerId);
+      if (seller) {
+        const amountToAdd = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
+        const newEarnings = parseFloat(seller.totalEarnings || 0) + amountToAdd;
+        
+        await seller.update({
+          totalEarnings: newEarnings
+        }, { transaction: t });
+      }
+    }
+
+    await t.commit();
+
+    res.json({
+      success: true,
+      message: 'Pesanan telah selesai dan saldo diteruskan ke seller.',
+      data: { status: 'COMPLETED' }
+    });
+  } catch (err) {
+    if (t) await t.rollback();
+    console.error('Error confirming delivery:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports = {
   getAll,
   getById,
@@ -321,4 +372,5 @@ module.exports = {
   update,
   cancel,      
   hardDelete,  
+  confirmDelivery
 };
