@@ -3,9 +3,7 @@ const router = express.Router();
 const { createOpname, getAllOpnames } = require('../controllers/stockOpnameController');
 const AuthMiddleware = require('../middlewares/AuthMiddleware');
 
-router.use(AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']));
-
-router.get('/', getAllOpnames);
-router.post('/', createOpname);
+router.get('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), getAllOpnames);
+router.post('/', AuthMiddleware(['OWNER', 'ADMIN', 'SELLER']), createOpname);
 
 module.exports = router;
