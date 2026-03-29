@@ -307,7 +307,7 @@ const update = async (req, res) => {
       const seller = await Seller.findByPk(sale.sellerId);
       if (seller) {
         const amountToSubtract = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
-        await seller.decrement({ saldo: amountToSubtract, totalEarnings: amountToSubtract }, { transaction: t });
+        await seller.decrement({ balance: amountToSubtract, totalEarnings: amountToSubtract }, { transaction: t });
       }
     }
 

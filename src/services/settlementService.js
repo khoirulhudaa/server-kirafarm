@@ -74,7 +74,7 @@ const processSellerSettlement = async () => {
       // Gunakan increment agar saldo tidak tertimpa jika ada transaksi bersamaan
       await Seller.increment(
         { 
-          saldo: amountToSeller,        // Pastikan kolomnya 'saldo'
+          balance: amountToSeller,        // Pastikan kolomnya 'saldo'
           totalEarnings: amountToSeller // Pastikan earnings juga bertambah di sini jika belum di controller
         }, 
         { where: { id: sale.sellerId }, transaction: t }
