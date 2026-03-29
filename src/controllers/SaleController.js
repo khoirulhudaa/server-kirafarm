@@ -1,5 +1,5 @@
 const { randomUUID } = require('crypto');
-const { Sale, SaleItem, Product, Customer } = require('../models');
+const { Sale, SaleItem, Product, Customer, Seller } = require('../models');
 
 // GET semua penjualan
 const getAll = async (req, res) => {
