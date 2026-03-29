@@ -64,6 +64,7 @@
       // Jika data dari tabel Seller langsung, role otomatis OWNER. 
       // Jika dari tabel User, gunakan role dari database.
       const role = finalSellerId && !userData.role ? 'OWNER' : userData.role;
+      const displayPhone = sellerInfo ? sellerInfo.whatsapp : (userData.phone || "");
 
       const token = jwt.sign(
         { 
@@ -83,6 +84,7 @@
           name: userData.name || userData.namaToko,
           email: userData.email,
           role: role,
+          phone: displayPhone,
           // Pastikan object seller dikirim lengkap agar frontend bisa simpan ke localStorage
           seller: sellerInfo ? {
             id: sellerInfo.id,
