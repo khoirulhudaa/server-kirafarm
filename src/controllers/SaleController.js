@@ -267,8 +267,6 @@ const create = async (req, res) => {
 // };
 
 
-const { randomUUID } = require('crypto');
-
 const update = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
