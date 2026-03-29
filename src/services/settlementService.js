@@ -73,10 +73,7 @@ const processSellerSettlement = async () => {
       const amountToSeller = parseFloat(sale.totalAmount);
 
       await Seller.increment(
-        { 
-          balance: amountToSeller, 
-          totalEarnings: amountToSeller 
-        },
+        { balance: amountToSeller }, 
         { where: { id: sale.sellerId }, transaction: t }
       );
 
