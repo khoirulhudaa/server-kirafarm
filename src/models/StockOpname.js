@@ -8,9 +8,19 @@ module.exports = (sequelize, DataTypes) => {
     adjustmentType: { type: DataTypes.ENUM('PLUS', 'MINUS'), allowNull: false },
     note: { type: DataTypes.TEXT },
     userName: { type: DataTypes.STRING }, // Nama personil yang input
-    productId: { type: DataTypes.STRING(36), allowNull: false },
-    sellerId: { type: DataTypes.STRING(36), allowNull: false }
-  }, { timestamps: true });
+    productId: { 
+      type: DataTypes.STRING(36), 
+      allowNull: false 
+    },
+    sellerId: { 
+      type: DataTypes.STRING(36), 
+      allowNull: false 
+    }
+  }, { 
+    timestamps: true, 
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci' 
+  });
 
   StockOpname.associate = (models) => {
     StockOpname.belongsTo(models.Product, { foreignKey: 'productId', as: 'product' });
