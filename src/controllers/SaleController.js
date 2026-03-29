@@ -266,7 +266,6 @@ const create = async (req, res) => {
 //   }
 // };
 
-
 const update = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
@@ -280,7 +279,7 @@ const update = async (req, res) => {
       actualWeights 
     } = req.body;
 
-    // 1. Ambil data lama sebelum diupdate
+    // 1. Ambil data lama sebelum diupdate untuk perbandingan
     const sale = await Sale.findByPk(id, {
       include: [{ model: SaleItem, as: 'items' }]
     });
@@ -290,20 +289,19 @@ const update = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Penjualan tidak ditemukan' });
     }
 
-    // Cegah edit jika sudah CANCELLED
     if (sale.status === 'CANCELLED') {
       await t.rollback();
       return res.status(400).json({ success: false, message: 'Penjualan yang dibatalkan tidak bisa diubah' });
     }
 
-    // Identifikasi perubahan status untuk Saldo
+    // Identifikasi perubahan status untuk Logika Saldo
     const isNowCompleted = (status === 'COMPLETED' && sale.status !== 'COMPLETED');
     const isRevertingFromCompleted = (sale.status === 'COMPLETED' && status && status !== 'COMPLETED');
 
-    let totalAmount = sale.totalAmount;
+    let currentTotalAmount = parseFloat(sale.totalAmount);
 
     // ==========================================
-    // UPDATE ITEMS & RE-CALCULATE TOTAL AMOUNT
+    // 2. UPDATE ITEMS & RE-CALCULATE TOTAL AMOUNT
     // ==========================================
     if (items && Array.isArray(items) && items.length > 0) {
       let newTotal = 0;
@@ -313,7 +311,7 @@ const update = async (req, res) => {
         const product = await Product.findByPk(item.productId);
         if (!product) throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
 
-        // Tentukan quantity/berat (actualWeights diprioritaskan)
+        // Tentukan quantity/berat (actualWeights dari input timbangan diprioritaskan)
         const weight = (actualWeights && actualWeights[item.productId]) 
           ? parseFloat(actualWeights[item.productId]) 
           : parseFloat(item.quantity);
@@ -331,93 +329,81 @@ const update = async (req, res) => {
           subtotal,
         });
 
-        // Potong stok hanya jika berubah menjadi SHIPPED pertama kali
+        // Potong stok jika status berubah ke SHIPPED
         if (status === 'SHIPPED' && sale.status !== 'SHIPPED') {
-          if (product.stock < weight) {
-            throw new Error(`Stok produk ${product.name} tidak mencukupi`);
-          }
+          if (product.stock < weight) throw new Error(`Stok produk ${product.name} tidak mencukupi`);
           await product.update({ stock: product.stock - weight }, { transaction: t });
         }
       }
 
-      // Hapus item lama, ganti dengan yang baru
+      // Hapus item lama, ganti dengan yang baru (Sync)
       await SaleItem.destroy({ where: { saleId: sale.id }, transaction: t });
       await SaleItem.bulkCreate(newSaleItems, { transaction: t });
-      totalAmount = newTotal;
+      currentTotalAmount = newTotal;
     }
 
     // ==========================================
-    // LOGIKA SALDO SELLER (EARNINGS)
+    // 3. LOGIKA SALDO SELLER (SKENARIO B)
     // ==========================================
-    if (sale.sellerId) {
+    if (sale.sellerId && (isNowCompleted || isRevertingFromCompleted)) {
       const seller = await Seller.findByPk(sale.sellerId);
       if (seller) {
         let finalEarnings = parseFloat(seller.totalEarnings || 0);
-        const finalShipping = parseFloat(shippingCost !== undefined ? shippingCost : sale.shippingCost || 0);
+        let finalSaldo = parseFloat(seller.saldo || 0);
 
         if (isNowCompleted) {
-          // TAMBAH SALDO: Total Baru + Ongkir Baru
-          const amountToAdd = parseFloat(totalAmount) + finalShipping;
+          // Tambah: Total Produk Baru + Ongkir Baru (atau lama jika tidak diupdate)
+          const newShipping = shippingCost !== undefined ? parseFloat(shippingCost) : parseFloat(sale.shippingCost || 0);
+          const amountToAdd = currentTotalAmount + newShipping;
+          
           finalEarnings += amountToAdd;
+          finalSaldo += amountToAdd;
         } 
         else if (isRevertingFromCompleted) {
-          // ROLLBACK: Kurangi saldo berdasarkan nilai LAMA yang tersimpan di DB
+          // Rollback: Kurangi berdasarkan nilai yang benar-benar tersimpan di DB sebelumnya
           const amountToSubtract = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
+          
           finalEarnings -= amountToSubtract;
+          finalSaldo -= amountToSubtract;
         }
 
-        await seller.update({ totalEarnings: finalEarnings }, { transaction: t });
+        await seller.update({ 
+          totalEarnings: finalEarnings,
+          saldo: finalSaldo 
+        }, { transaction: t });
       }
     }
 
     // ==========================================
-    // UPDATE MASTER SALE
+    // 4. UPDATE MASTER SALE
     // ==========================================
     await sale.update({
       customerName: customerName || sale.customerName,
       customerId: customerId || sale.customerId,
       status: status || sale.status,
       shippingCost: shippingCost !== undefined ? parseFloat(shippingCost) : sale.shippingCost,
-      totalAmount: totalAmount,
-      // Update completedAt secara otomatis
+      totalAmount: currentTotalAmount,
       completedAt: isNowCompleted ? new Date() : (isRevertingFromCompleted ? null : sale.completedAt)
     }, { transaction: t });
 
     await t.commit();
 
-    // ==========================================
-    // NOTIFIKASI SOCKET.IO
-    // ==========================================
+    // Notifikasi Socket.io
     const io = req.app.get('io');
     if (io) {
       io.to(id).emit("shipping_updated", {
         orderId: id,
         status: status || sale.status,
-        shippingCost: shippingCost,
-        message: "Status pesanan diperbarui oleh Admin"
+        message: "Data transaksi diperbarui"
       });
     }
 
-    // Kirim response data terbaru
-    const updatedSale = await Sale.findByPk(id, {
-      include: [{ model: SaleItem, as: 'items' }]
-    });
-
-    res.json({
-      success: true,
-      message: isRevertingFromCompleted 
-        ? 'Pesanan diperbarui & saldo seller telah di-rollback.' 
-        : 'Penjualan berhasil diperbarui',
-      data: updatedSale,
-    });
+    const updatedData = await Sale.findByPk(id, { include: [{ model: SaleItem, as: 'items' }] });
+    res.json({ success: true, data: updatedData });
 
   } catch (err) {
     if (t) await t.rollback();
-    console.error('Error updating sale:', err);
-    res.status(500).json({
-      success: false,
-      message: err.message || 'Gagal memperbarui penjualan',
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -494,29 +480,32 @@ const confirmDelivery = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Pesanan tidak ditemukan' });
     }
 
-    // Hanya pesanan yang sudah dikirim (SHIPPED) yang bisa dikonfirmasi
+    // Validasi: Hanya status SHIPPED (sudah dikirim) yang bisa diselesaikan
     if (sale.status !== 'SHIPPED') {
       return res.status(400).json({ 
         success: false, 
-        message: 'Hanya pesanan dengan status SHIPPED yang dapat dikonfirmasi.' 
+        message: 'Pesanan harus dikirim (SHIPPED) sebelum dikonfirmasi selesai.' 
       });
     }
 
-    // 1. Update status Sale menjadi COMPLETED
+    // 1. Update status transaksi
     await sale.update({
       status: 'COMPLETED',
       completedAt: new Date()
     }, { transaction: t });
 
-    // 2. Tambahkan saldo ke Seller (totalAmount + shippingCost)
+    // 2. Distribusi Saldo ke Seller (Skenario B: Harga + Ongkir)
     if (sale.sellerId) {
       const seller = await Seller.findByPk(sale.sellerId);
       if (seller) {
         const amountToAdd = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
+        
         const newEarnings = parseFloat(seller.totalEarnings || 0) + amountToAdd;
+        const newSaldo = parseFloat(seller.saldo || 0) + amountToAdd;
         
         await seller.update({
-          totalEarnings: newEarnings
+          totalEarnings: newEarnings,
+          saldo: newSaldo
         }, { transaction: t });
       }
     }
@@ -525,12 +514,12 @@ const confirmDelivery = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Pesanan telah selesai dan saldo diteruskan ke seller.',
+      message: 'Transaksi selesai. Saldo dan Earnings seller telah diperbarui.',
       data: { status: 'COMPLETED' }
     });
   } catch (err) {
     if (t) await t.rollback();
-    console.error('Error confirming delivery:', err);
+    console.error('Confirm Delivery Error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
