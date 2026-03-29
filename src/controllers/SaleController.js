@@ -134,6 +134,141 @@ const create = async (req, res) => {
   }
 };
 
+// const update = async (req, res) => {
+//   const t = await Sale.sequelize.transaction();
+//   try {
+//     const { id } = req.params;
+//     const { 
+//       customerName, 
+//       customerId, 
+//       items, 
+//       status, 
+//       shippingCost,
+//       actualWeights 
+//     } = req.body;
+
+//     const sale = await Sale.findByPk(id, {
+//       include: [{ model: SaleItem, as: 'items' }]
+//     });
+//     if (!sale) {
+//       return res.status(404).json({ success: false, message: 'Penjualan tidak ditemukan' });
+//     }
+
+//     if (sale.status === 'CANCELLED') {
+//       return res.status(400).json({ success: false, message: 'Penjualan yang dibatalkan tidak bisa diubah' });
+//     }
+
+//     let totalAmount = sale.totalAmount;
+
+//     if (items && Array.isArray(items) && items.length > 0) {
+//       let newTotal = 0;
+//       const newSaleItems = [];
+
+//       for (const item of items) {
+//         const product = await Product.findByPk(item.productId);
+//         if (!product) {
+//           throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
+//         }
+
+//         const weight = (actualWeights && actualWeights[item.productId]) 
+//           ? actualWeights[item.productId] 
+//           : item.quantity;
+
+//         const subtotal = product.price * weight;
+//         newTotal += subtotal;
+
+//         newSaleItems.push({
+//           id: randomUUID(),
+//           saleId: sale.id,
+//           productId: product.id,
+//           productName: product.name,
+//           price: product.price,
+//           quantity: weight,
+//           subtotal,
+//         });
+
+//         if (status === 'SHIPPED' && sale.status !== 'SHIPPED') {
+//           if (product.stock < weight) {
+//             throw new Error(`Stok produk ${product.name} tidak mencukupi`);
+//           }
+//           await product.update({ stock: product.stock - weight }, { transaction: t });
+//         }
+//       }
+
+//       await SaleItem.destroy({ where: { saleId: sale.id }, transaction: t });
+//       await SaleItem.bulkCreate(newSaleItems, { transaction: t });
+//       totalAmount = newTotal;
+//     }
+
+//     const isBecomingCompleted = (status === 'COMPLETED' && sale.status !== 'COMPLETED');
+
+//     // =========================
+//     // UPDATE SALE
+//     // =========================
+//     await sale.update({
+//       customerName: customerName || sale.customerName,
+//       customerId: customerId || sale.customerId,
+//       status: status || sale.status,
+//       shippingCost: shippingCost !== undefined ? shippingCost : sale.shippingCost,
+//       totalAmount: totalAmount,
+//       ...(isBecomingCompleted && { completedAt: new Date() })
+//     }, { transaction: t });
+
+//     if (isBecomingCompleted && sale.sellerId) {
+//       const seller = await Seller.findByPk(sale.sellerId);
+//       if (seller) {
+//         // Gunakan totalAmount terbaru (hasil hitung ulang di atas) + shippingCost terbaru
+//         const finalShippingCost = shippingCost !== undefined ? shippingCost : sale.shippingCost;
+//         const amountToAdd = parseFloat(totalAmount) + parseFloat(finalShippingCost || 0);
+        
+//         const newEarnings = parseFloat(seller.totalEarnings || 0) + amountToAdd;
+        
+//         await seller.update({
+//           totalEarnings: newEarnings
+//         }, { transaction: t });
+//       }
+//     }
+
+//     await t.commit();
+
+//     // =========================
+//     // 🔥 SOCKET.IO EMIT DI SINI
+//     // =========================
+//     const io = req.app.get('io');
+
+//     io.to(id).emit("shipping_updated", {
+//       orderId: id,
+//       status: status || sale.status,
+//       shippingCost: shippingCost,
+//       message: "Pesanan kamu diupdate oleh seller"
+//     });
+
+//     // =========================
+//     // RESPONSE
+//     // =========================
+//     const updatedSale = await Sale.findByPk(id, {
+//       include: [{ model: SaleItem, as: 'items' }]
+//     });
+
+//     res.json({
+//       success: true,
+//       message: 'Penjualan berhasil diperbarui',
+//       data: updatedSale,
+//     });
+
+//   } catch (err) {
+//     if (t) await t.rollback();
+//     console.error('Error updating sale:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: err.message || 'Gagal memperbarui penjualan',
+//     });
+//   }
+// };
+
+
+const { randomUUID } = require('crypto');
+
 const update = async (req, res) => {
   const t = await Sale.sequelize.transaction();
   try {
@@ -147,35 +282,43 @@ const update = async (req, res) => {
       actualWeights 
     } = req.body;
 
+    // 1. Ambil data lama sebelum diupdate
     const sale = await Sale.findByPk(id, {
       include: [{ model: SaleItem, as: 'items' }]
     });
+
     if (!sale) {
+      await t.rollback();
       return res.status(404).json({ success: false, message: 'Penjualan tidak ditemukan' });
     }
 
+    // Cegah edit jika sudah CANCELLED
     if (sale.status === 'CANCELLED') {
+      await t.rollback();
       return res.status(400).json({ success: false, message: 'Penjualan yang dibatalkan tidak bisa diubah' });
     }
 
+    // Identifikasi perubahan status untuk Saldo
+    const isNowCompleted = (status === 'COMPLETED' && sale.status !== 'COMPLETED');
+    const isRevertingFromCompleted = (sale.status === 'COMPLETED' && status && status !== 'COMPLETED');
+
     let totalAmount = sale.totalAmount;
 
-    // =========================
-    // UPDATE ITEMS (tetap sama)
-    // =========================
+    // ==========================================
+    // UPDATE ITEMS & RE-CALCULATE TOTAL AMOUNT
+    // ==========================================
     if (items && Array.isArray(items) && items.length > 0) {
       let newTotal = 0;
       const newSaleItems = [];
 
       for (const item of items) {
         const product = await Product.findByPk(item.productId);
-        if (!product) {
-          throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
-        }
+        if (!product) throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan`);
 
+        // Tentukan quantity/berat (actualWeights diprioritaskan)
         const weight = (actualWeights && actualWeights[item.productId]) 
-          ? actualWeights[item.productId] 
-          : item.quantity;
+          ? parseFloat(actualWeights[item.productId]) 
+          : parseFloat(item.quantity);
 
         const subtotal = product.price * weight;
         newTotal += subtotal;
@@ -190,6 +333,7 @@ const update = async (req, res) => {
           subtotal,
         });
 
+        // Potong stok hanya jika berubah menjadi SHIPPED pertama kali
         if (status === 'SHIPPED' && sale.status !== 'SHIPPED') {
           if (product.stock < weight) {
             throw new Error(`Stok produk ${product.name} tidak mencukupi`);
@@ -198,46 +342,74 @@ const update = async (req, res) => {
         }
       }
 
+      // Hapus item lama, ganti dengan yang baru
       await SaleItem.destroy({ where: { saleId: sale.id }, transaction: t });
       await SaleItem.bulkCreate(newSaleItems, { transaction: t });
       totalAmount = newTotal;
     }
 
-    // =========================
-    // UPDATE SALE
-    // =========================
+    // ==========================================
+    // LOGIKA SALDO SELLER (EARNINGS)
+    // ==========================================
+    if (sale.sellerId) {
+      const seller = await Seller.findByPk(sale.sellerId);
+      if (seller) {
+        let finalEarnings = parseFloat(seller.totalEarnings || 0);
+        const finalShipping = parseFloat(shippingCost !== undefined ? shippingCost : sale.shippingCost || 0);
+
+        if (isNowCompleted) {
+          // TAMBAH SALDO: Total Baru + Ongkir Baru
+          const amountToAdd = parseFloat(totalAmount) + finalShipping;
+          finalEarnings += amountToAdd;
+        } 
+        else if (isRevertingFromCompleted) {
+          // ROLLBACK: Kurangi saldo berdasarkan nilai LAMA yang tersimpan di DB
+          const amountToSubtract = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
+          finalEarnings -= amountToSubtract;
+        }
+
+        await seller.update({ totalEarnings: finalEarnings }, { transaction: t });
+      }
+    }
+
+    // ==========================================
+    // UPDATE MASTER SALE
+    // ==========================================
     await sale.update({
       customerName: customerName || sale.customerName,
       customerId: customerId || sale.customerId,
       status: status || sale.status,
-      shippingCost: shippingCost !== undefined ? shippingCost : sale.shippingCost,
+      shippingCost: shippingCost !== undefined ? parseFloat(shippingCost) : sale.shippingCost,
       totalAmount: totalAmount,
+      // Update completedAt secara otomatis
+      completedAt: isNowCompleted ? new Date() : (isRevertingFromCompleted ? null : sale.completedAt)
     }, { transaction: t });
 
     await t.commit();
 
-    // =========================
-    // 🔥 SOCKET.IO EMIT DI SINI
-    // =========================
+    // ==========================================
+    // NOTIFIKASI SOCKET.IO
+    // ==========================================
     const io = req.app.get('io');
+    if (io) {
+      io.to(id).emit("shipping_updated", {
+        orderId: id,
+        status: status || sale.status,
+        shippingCost: shippingCost,
+        message: "Status pesanan diperbarui oleh Admin"
+      });
+    }
 
-    io.to(id).emit("shipping_updated", {
-      orderId: id,
-      status: status || sale.status,
-      shippingCost: shippingCost,
-      message: "Pesanan kamu diupdate oleh seller"
-    });
-
-    // =========================
-    // RESPONSE
-    // =========================
+    // Kirim response data terbaru
     const updatedSale = await Sale.findByPk(id, {
       include: [{ model: SaleItem, as: 'items' }]
     });
 
     res.json({
       success: true,
-      message: 'Penjualan berhasil diperbarui',
+      message: isRevertingFromCompleted 
+        ? 'Pesanan diperbarui & saldo seller telah di-rollback.' 
+        : 'Penjualan berhasil diperbarui',
       data: updatedSale,
     });
 
