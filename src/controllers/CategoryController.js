@@ -34,6 +34,7 @@ const getAll = async (req, res) => {
     });
   }
 };
+
 // GET kategori berdasarkan ID
 const getById = async (req, res) => {
   try {
