@@ -29,8 +29,8 @@ const withdrawRoutes = require('./src/routes/withdrawalRoute');
 const { processSellerSettlement } = require('./src/services/settlementService');
 
 // Berjalan setiap 15 menit untuk cek pesanan yang sudah "matang" (2 jam)
-cron.schedule('*/15 * * * *', () => {
-  console.log('Running auto-settlement check...');
+cron.schedule('* * * * *', () => {
+  console.log('--- [TEST MODE] Running auto-settlement check (Every 1 Minute) ---');
   processSellerSettlement();
 });
 
