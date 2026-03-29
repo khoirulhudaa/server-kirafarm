@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
     
     // Snapshot rekening saat request dibuat (untuk keamanan jika seller ganti profil)
     bankName: { type: DataTypes.STRING, allowNull: false },
+    
     accountNumber: { type: DataTypes.STRING, allowNull: false },
     accountName: { type: DataTypes.STRING, allowNull: false },
     
