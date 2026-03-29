@@ -54,14 +54,13 @@ const { Op } = require('sequelize');
 const processSellerSettlement = async () => {
   const t = await sequelize.transaction();
   try {
-    // 1. Ubah ke 1 menit (60 * 1000 ms) untuk keperluan TESTING
     const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000);
     
     const readyToSettle = await Sale.findAll({
       where: {
         status: 'COMPLETED',
         isSettledToSeller: false,
-        completedAt: { [Op.lte]: oneMinuteAgo } // Mengambil yang sudah completed lebih dari 1 menit lalu
+        completedAt: { [Op.lte]: oneMinuteAgo }
       },
       transaction: t
     });
@@ -69,21 +68,24 @@ const processSellerSettlement = async () => {
     for (const sale of readyToSettle) {
       if (!sale.sellerId) continue;
 
-      // 2. Update Saldo Seller
-      const amountToSeller = parseFloat(sale.totalAmount);
+      // PERBAIKAN DI SINI: Sertakan Ongkir (Skenario B)
+      const amountToSeller = parseFloat(sale.totalAmount) + parseFloat(sale.shippingCost || 0);
 
+      // Gunakan increment agar saldo tidak tertimpa jika ada transaksi bersamaan
       await Seller.increment(
-        { balance: amountToSeller }, 
+        { 
+          saldo: amountToSeller,        // Pastikan kolomnya 'saldo'
+          totalEarnings: amountToSeller // Pastikan earnings juga bertambah di sini jika belum di controller
+        }, 
         { where: { id: sale.sellerId }, transaction: t }
       );
 
-      // 3. Tandai Sale sudah settled
       await sale.update({ 
         isSettledToSeller: true, 
         settledAt: new Date() 
       }, { transaction: t });
       
-      console.log(`✅ [TEST MODE] Settle INV ${sale.invoiceNumber} sebesar ${amountToSeller} ke Seller ${sale.sellerId}`);
+      console.log(`✅ [SETTLED] INV ${sale.invoiceNumber}: ${amountToSeller} (Produk + Ongkir) ke Seller`);
     }
 
     await t.commit();
