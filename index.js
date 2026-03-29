@@ -25,6 +25,7 @@ const customerRoutes = require('./src/routes/CustomerRoute');
 const userRoutes = require('./src/routes/UserRoute');
 const xenditRoutes = require('./src/routes/xenditRoute');
 const chatRoutes = require('./src/routes/chatRoute');
+const withdrawRoutes = require('./src/routes/withdrawalRoute');
 const { processSellerSettlement } = require('./src/services/settlementService');
 
 // Berjalan setiap 15 menit untuk cek pesanan yang sudah "matang" (2 jam)
@@ -56,6 +57,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/xendit', xenditRoutes);
+app.use('/api/withdaw', withdrawRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/sales', saleRoutes);
