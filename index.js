@@ -57,7 +57,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/xendit', xenditRoutes);
-app.use('/api/withdaw', withdrawRoutes);
+app.use('/api/withdraw', withdrawRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/sales', saleRoutes);
