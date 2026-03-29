@@ -17,7 +17,7 @@ router.post('/request', AuthMiddleware(['SELLER']), requestWithdrawal);
 
 // Admin mengelola request + Upload Bukti Transfer
 router.patch('/admin/status/:id', 
-  AuthMiddleware(['ADMIN', 'OWNER']), 
+  AuthMiddleware(['ADMIN', 'OWNER', 'SELLER']), 
   upload.single('proof'), // Nama field dari frontend: 'proof'
   updateWithdrawalStatus
 );
