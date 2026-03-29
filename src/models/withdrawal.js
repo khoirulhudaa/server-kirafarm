@@ -21,7 +21,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('PENDING', 'SUCCESS', 'REJECTED'), 
       defaultValue: 'PENDING' 
     },
-    adminNote: { type: DataTypes.TEXT } // Catatan admin jika ditolak
+    adminNote: { type: DataTypes.TEXT }, // Catatan admin jika ditolak
+    proofOfTransfer: { 
+      type: DataTypes.STRING, 
+      allowNull: true // Awalnya kosong, diisi saat admin proses transfer
+    },
   }, { 
     timestamps: true, 
     charset: 'utf8mb4',

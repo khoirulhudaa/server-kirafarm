@@ -1,5 +1,20 @@
 const { Withdrawal, Seller, sequelize } = require('../models');
 const { randomUUID } = require('crypto');
+const cloudinary = require('cloudinary').v2;
+
+// Fungsi helper untuk upload ke Cloudinary (sama dengan seller controller Anda)
+const streamUpload = (fileBuffer, folderName) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: `withdrawals/${folderName}` },
+      (error, result) => {
+        if (result) resolve(result);
+        else reject(error);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
 
 // 1. SELLER: Request Tarik Dana
 const requestWithdrawal = async (req, res) => {
@@ -60,27 +75,51 @@ const updateWithdrawalStatus = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { status, adminNote } = req.body; // SUCCESS atau REJECTED
+    const { status, adminNote } = req.body;
 
     const withdrawal = await Withdrawal.findByPk(id);
     if (!withdrawal) return res.status(404).json({ success: false, message: 'Data tidak ditemukan' });
     if (withdrawal.status !== 'PENDING') return res.status(400).json({ success: false, message: 'Request sudah diproses' });
 
+    let proofUrl = withdrawal.proofOfTransfer;
+
+    if (status === 'SUCCESS') {
+      // 1. VALIDASI: Wajib ada file upload jika ingin approve
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Bukti transfer (file) wajib diunggah untuk menyetujui penarikan' 
+        });
+      }
+
+      // 2. Upload ke Cloudinary
+      const uploadResult = await streamUpload(req.file.buffer, 'proofs');
+      proofUrl = uploadResult.secure_url;
+    }
+
     if (status === 'REJECTED') {
-      // Jika ditolak, kembalikan saldo ke seller
+      // Kembalikan saldo ke seller jika ditolak
       const seller = await Seller.findByPk(withdrawal.sellerId);
       seller.balance = parseFloat(seller.balance) + parseFloat(withdrawal.amount);
       await seller.save({ transaction: t });
     }
 
+    // 3. Update data Withdrawal
     withdrawal.status = status;
     withdrawal.adminNote = adminNote;
+    withdrawal.proofOfTransfer = proofUrl; // Simpan URL Cloudinary
     await withdrawal.save({ transaction: t });
 
     await t.commit();
-    res.json({ success: true, message: `Penarikan dana ${status.toLowerCase()}` });
+    res.json({ 
+      success: true, 
+      message: `Penarikan dana ${status.toLowerCase()} berhasil`,
+      data: { status, proofOfTransfer: proofUrl }
+    });
+
   } catch (err) {
-    await t.rollback();
+    if (t) await t.rollback();
+    console.error('Withdrawal Update Error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
