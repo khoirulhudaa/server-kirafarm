@@ -59,6 +59,10 @@
           'DELIVERED',
           'COMPLETED',
           'CANCELLED',
+          'REFUND_REQUESTED',
+          'REFUND_REVIEW',
+          'REFUND_SUCCESS',
+          'REFUND_REJECTED',
           'EXPIRED'
         ),
         defaultValue: 'PENDING',

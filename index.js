@@ -27,6 +27,7 @@ const xenditRoutes = require('./src/routes/xenditRoute');
 const chatRoutes = require('./src/routes/chatRoute');
 const withdrawRoutes = require('./src/routes/withdrawalRoute');
 const stockOpnameRoutes = require('./src/routes/stockOpnameRoutes');
+const refundRoutes = require('./src/routes/refundRoute');
 const { processSellerSettlement } = require('./src/services/settlementService');
 
 // Berjalan setiap 15 menit untuk cek pesanan yang sudah "matang" (2 jam)
@@ -65,6 +66,7 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/stock-opname', stockOpnameRoutes);
+app.use('/api/refund', refundRoutes);
 
 // Route default / health check
 app.get('/', (req, res) => {

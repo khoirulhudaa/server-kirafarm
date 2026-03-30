@@ -143,6 +143,14 @@ const update = async (req, res) => {
     const sale = await Sale.findByPk(id, { include: [{ model: SaleItem, as: 'items' }] });
     if (!sale) return res.status(404).json({ success: false, message: 'Data tidak ditemukan' });
 
+    // 🔥 TAMBAHKAN DI SINI
+    if (sale.status.includes('REFUND')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order sedang dalam proses refund'
+      });
+    }
+
     // Identifikasi perubahan status
     const isNowCompleted = (status === 'COMPLETED' && sale.status !== 'COMPLETED');
     const isRevertingFromCompleted = (sale.status === 'COMPLETED' && status && status !== 'COMPLETED');
@@ -212,6 +220,13 @@ const cancel = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Penjualan sudah dibatalkan' });
     }
 
+    if (sale.status.includes('REFUND')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order sedang proses refund'
+      });
+    }
+    
     await sale.update({ status: 'CANCELLED' });
 
     res.json({
@@ -270,6 +285,14 @@ const confirmDelivery = async (req, res) => {
     if (!sale || sale.status !== 'SHIPPED') {
       return res.status(400).json({ success: false, message: 'Status tidak valid' });
     }
+
+    // 🔥 TAMBAHKAN DI SINI
+      if (sale.status.includes('REFUND')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Order sedang dalam proses refund'
+        });
+      }
 
     // CUKUP UPDATE STATUS SAJA
     // Biarkan settlementService yang menambah saldo nanti
